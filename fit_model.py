@@ -5,7 +5,7 @@ import argparse
 import configparser
 from datetime import datetime, timedelta
 import os
-from cldb import cldb
+from cldb import cldb, conversions
 import radar_archive
 
 argparser = argparse.ArgumentParser()
@@ -28,17 +28,34 @@ browser = radar_archive.Browser(config_radar["root_path"],  config_radar["path_f
                                 int(config_radar["timestep"]))
 
 curdate = startdate
+R = {}
 while curdate <= enddate:
-  radar_fn = browser.listfiles(curdate)[0]
-  # TODO: Implement your own importer for reading the radar data. This one is 
-  # for testing purposes.
-  # ...
+  fn = browser.listfiles(curdate)
+  # TODO: Implement your own importer for reading the radar data. This is for 
+  # testing purposes.
+  from numpy import random
+  R[fn[1][0]] = random.normal(size=(1000, 1000))
   #
   curdate += timedelta(minutes=int(config_radar["timestep"]))
 
 cldb_client = cldb.CLDBClient(config_gauge["cldb_username"], 
                               config_gauge["cldb_password"])
-stations = cldb_client.query_stations_fmi(["lpnn", "lat", "lon"])
+
+cols = ["lpnn", "lat", "lat_sec", "lon", "lon_sec", "grlat", "grlon", 
+        "nvl(elstat,0)"]
+col_names = ["lpnn", "lat", "lat_sec", "lon", "lon_sec", "grlat", "grlon", 
+             "elstat"]
+
+gauges = cldb_client.query_stations_fmi(cols, column_names=col_names)
+gauges = conversions.station_list_to_lonlatalt(gauges)
+
+if config_gauge["gauge_type"] == "intensity":
+  gauge_obs = cldb_client.query_precip_int(args.startdate, args.enddate, 50, 
+    sort_by_timestamp=True, convert_timestamps=True)
+else:
+  gauge_obs = cldb_client.query_precip_accum_fmi(args.startdate, args.enddate, 
+    int(config_gauge["accum_time"]), 50, sort_by_timestamp=True, 
+    convert_timestamps=True)
 
 # TODO ...
 
