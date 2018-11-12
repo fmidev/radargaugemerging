@@ -1,4 +1,4 @@
-"""Utilities for finding archived radar composites."""
+"""Utilities for browsing archived radar composites."""
 
 from datetime import datetime, timedelta
 import fnmatch
