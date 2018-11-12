@@ -5,7 +5,7 @@ import argparse
 import configparser
 from datetime import datetime, timedelta
 import os
-import cldb
+from cldb import cldb
 import radar_archive
 
 argparser = argparse.ArgumentParser()
@@ -21,6 +21,7 @@ config = configparser.ConfigParser(interpolation=None)
 config.read(os.path.join("config", args.profile, "datasources.cfg"))
 
 config_radar = config["radar"]
+config_gauge = config["gauge"]
 
 browser = radar_archive.Browser(config_radar["root_path"],  config_radar["path_fmt"], 
                                 config_radar["fn_pattern"], config_radar["fn_ext"], 
@@ -29,7 +30,15 @@ browser = radar_archive.Browser(config_radar["root_path"],  config_radar["path_f
 curdate = startdate
 while curdate <= enddate:
   radar_fn = browser.listfiles(curdate)[0]
+  # TODO: Implement your own importer for reading the radar data. This one is 
+  # for testing purposes.
+  # ...
+  #
   curdate += timedelta(minutes=int(config_radar["timestep"]))
+
+cldb_client = cldb.CLDBClient(config_gauge["cldb_username"], 
+                              config_gauge["cldb_password"])
+stations = cldb_client.query_stations_fmi(["lpnn", "lat", "lon"])
 
 # TODO ...
 
