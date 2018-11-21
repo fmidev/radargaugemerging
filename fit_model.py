@@ -137,12 +137,14 @@ for radar_ts in sorted(R.keys()):
       if x_ >= 0.0 and y_ >= 0.0 and x_ <= R_shape[1] and y_ < R_shape[0]:
         r_obs = R_cur[y_, x_]
         g_obs = g[1]
-        if r_obs > 0 and g_obs > 0:
+        # TODO: Make the threshold values configurable.
+        if r_obs > 0.1 and g_obs > 0.1:
           r_sum += r_obs
           g_sum += g_obs
           n_samples += 1
 
 print("Done.")
 
-print("MFB = %.3f" % (10*np.log10(g_sum) / (10*np.log10(r_sum))))
+MFB = (10*np.log10(g_sum) / (10*np.log10(r_sum)))
+print("MFB = %.3f , no. samples = %d" % (MFB, n_samples))
 
