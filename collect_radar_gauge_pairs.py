@@ -152,7 +152,6 @@ for radar_ts in sorted(radar_rain_accum.keys()):
             ):
                 r_obs = radar_rain_accum_cur[y_, x_]
                 g_obs = g[1]
-                # TODO: Make the threshold values configurable.
                 if r_obs >= r_thr and g_obs >= g_thr:
                     r_sum += r_obs
                     g_sum += g_obs
