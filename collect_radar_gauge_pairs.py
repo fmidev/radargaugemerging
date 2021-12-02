@@ -12,7 +12,7 @@ import requests
 import sys
 import radar_archive
 
-# Parse command-line arguments.
+# parse command-line arguments
 argparser = argparse.ArgumentParser()
 argparser.add_argument("startdate", type=str, help="start date (YYYYMMDDHHMM)")
 argparser.add_argument("enddate", type=str, help="end date (YYYYMMDDHHMM)")
@@ -37,11 +37,9 @@ browser = radar_archive.Browser(
     int(config_radar["timestep"]),
 )
 
-# Read radar data from the archive.
-# TODO: Check the availability of gauge data first, and based on that, read
-# only the radar data that is needed.
+# read radar data from the archive
 curdate = startdate
-R = {}
+radar_rain_accum = {}
 while curdate <= enddate:
     fn = browser.listfiles(curdate)
 
@@ -51,7 +49,7 @@ while curdate <= enddate:
     # testing purposes.
     from numpy import random
 
-    R[fn[1][0]] = random.normal(size=(1000, 1000)) + 5.0
+    radar_rain_accum[fn[1][0]] = random.normal(size=(1000, 1000)) + 5.0
     #
 
     print("done.")
@@ -59,7 +57,6 @@ while curdate <= enddate:
     curdate += timedelta(minutes=int(config_radar["timestep"]))
 
 # read gauge observations from SmartMet
-
 cols = ["lpnn", "lat", "lat_sec", "lon", "lon_sec", "grlat", "grlon", "nvl(elstat,0)"]
 col_names = ["lpnn", "lat", "lat_sec", "lon", "lon_sec", "grlat", "grlon", "elstat"]
 
@@ -102,13 +99,13 @@ pr = pyproj.Proj(config_radar["projection"])
 x1, y1 = pr(config_radar["bbox_ll_lon"], config_radar["bbox_ll_lat"])
 x2, y2 = pr(config_radar["bbox_ur_lon"], config_radar["bbox_ur_lat"])
 
-R_shape = list(R.values())[0].shape
+radar_rain_accum_shape = list(radar_rain_accum.values())[0].shape
 
 gauge_xy = set()
 for g in gauge_lonlat:
     x, y = pr(g[1], g[2])
-    x = (x - x1) / (x2 - x1) * (R_shape[1] - 1) + 0.5
-    y = (y2 - y) / (y2 - y1) * (R_shape[0] - 1) + 0.5
+    x = (x - x1) / (x2 - x1) * (radar_rain_accum_shape[1] - 1) + 0.5
+    y = (y2 - y) / (y2 - y1) * (radar_rain_accum_shape[0] - 1) + 0.5
     gauge_xy.add((g[0], x, y))
 
 print("done.")
@@ -131,9 +128,9 @@ r_sum = 0.0
 g_sum = 0.0
 n_samples = 0
 
-# Collect radar-gauge pairs.
-for radar_ts in sorted(R.keys()):
-    R_cur = R[radar_ts]
+# collect radar-gauge pairs
+for radar_ts in sorted(radar_rain_accum.keys()):
+    radar_rain_accum_cur = radar_rain_accum[radar_ts]
     if radar_ts in gauge_obs.keys():
         g_cur = gauge_obs[radar_ts]
         for g in g_cur:
@@ -141,8 +138,13 @@ for radar_ts in sorted(R.keys()):
             x, y = gauges[fmisid][0], gauges[fmisid][1]
             x_ = int(np.round(x))
             y_ = int(np.round(y))
-            if x_ >= 0.0 and y_ >= 0.0 and x_ <= R_shape[1] and y_ < R_shape[0]:
-                r_obs = R_cur[y_, x_]
+            if (
+                x_ >= 0.0
+                and y_ >= 0.0
+                and x_ <= radar_rain_accum_shape[1]
+                and y_ < radar_rain_accum_shape[0]
+            ):
+                r_obs = radar_rain_accum_cur[y_, x_]
                 g_obs = g[1]
                 # TODO: Make the threshold values configurable.
                 if r_obs > 0.1 and g_obs > 0.1:
