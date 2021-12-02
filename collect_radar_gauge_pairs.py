@@ -1,5 +1,5 @@
-# For a give date range, this script fetches radar and gauge data from the
-# FMI databases and fits a regression model for the gauge-radar adjustments.
+"""For the given time range, fetch radar- and gauge-based rainfall accumulations
+from the FMI databases and collect co-located measurement pairs."""
 
 import argparse
 from collections import defaultdict
@@ -151,6 +151,3 @@ for radar_ts in sorted(R.keys()):
                     n_samples += 1
 
 print("done.")
-
-MFB = 10 * np.log10(g_sum) / (10 * np.log10(r_sum))
-print("MFB = %.3f , no. samples = %d" % (MFB, n_samples))
