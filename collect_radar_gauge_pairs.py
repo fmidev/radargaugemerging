@@ -22,12 +22,15 @@ args = argparser.parse_args()
 startdate = datetime.strptime(args.startdate, "%Y%m%d%H%M")
 enddate = datetime.strptime(args.enddate, "%Y%m%d%H%M")
 
-# Read the configuration files.
-config = configparser.ConfigParser(interpolation=None)
-config.read(os.path.join("config", args.profile, "datasources.cfg"))
+# read the configuration files
+config = configparser.ConfigParser()
+config.read(os.path.join("config", args.profile, "collect_radar_gauge_pairs.cfg"))
 
-config_radar = config["radar"]
-config_gauge = config["gauge"]
+config_ds = configparser.ConfigParser(interpolation=None)
+config_ds.read(os.path.join("config", args.profile, "datasources.cfg"))
+
+config_radar = config_ds["radar"]
+config_gauge = config_ds["gauge"]
 
 browser = radar_archive.Browser(
     config_radar["root_path"],
@@ -128,6 +131,9 @@ r_sum = 0.0
 g_sum = 0.0
 n_samples = 0
 
+r_thr = float(config["thresholds"]["radar"])
+g_thr = float(config["thresholds"]["gauge"])
+
 # collect radar-gauge pairs
 for radar_ts in sorted(radar_rain_accum.keys()):
     radar_rain_accum_cur = radar_rain_accum[radar_ts]
@@ -147,7 +153,7 @@ for radar_ts in sorted(radar_rain_accum.keys()):
                 r_obs = radar_rain_accum_cur[y_, x_]
                 g_obs = g[1]
                 # TODO: Make the threshold values configurable.
-                if r_obs > 0.1 and g_obs > 0.1:
+                if r_obs >= r_thr and g_obs >= g_thr:
                     r_sum += r_obs
                     g_sum += g_obs
                     n_samples += 1
