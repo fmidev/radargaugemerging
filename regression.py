@@ -14,13 +14,13 @@ class Polynomial:
         Parameters
         ----------
         X : array_like
-          Coordinates of the data points. Array of shape (n,d), where n is the
-          number of data points and d is dimension.
+            Coordinates of the data points. Array of shape (n,d), where n is
+            the number of data points and d is dimension.
         Y : array_like
-          One-dimensional array of length n containing function values at the data
-          points.
+            One-dimensional array of length n containing function values at the
+            data points.
         degree : int
-          Degree of the polynomial.
+            Degree of the polynomial.
         """
         P = np.array(X)
         V = _polyvandernd(P, degree)
@@ -35,12 +35,13 @@ class Polynomial:
         Parameters
         ----------
         X : array_like
-          Array of shape (n,d) containing n d-dimensional points.
+            Array of shape (n,d) containing n d-dimensional points.
 
         Returns
         -------
         out : array_like
-          N-dimensional array containing the function values at the given points.
+            N-dimensional array containing the function values at the given
+            points.
         """
         if len(X.shape) == 1:
             X = np.reshape(X, (len(X), 1))
