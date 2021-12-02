@@ -1,21 +1,23 @@
 """For the given time range, fetch radar- and gauge-based rainfall accumulations
-from the FMI databases and collect co-located measurement pairs."""
+from the FMI databases and collect co-located measurement pairs. Write the
+pairs into the given file as a pickle dump."""
 
 import argparse
 from collections import defaultdict
 import configparser
 from datetime import datetime, timedelta
-import numpy as np
 import os
+import pickle
+import numpy as np
 import pyproj
 import requests
-import sys
 import radar_archive
 
 # parse command-line arguments
 argparser = argparse.ArgumentParser()
 argparser.add_argument("startdate", type=str, help="start date (YYYYMMDDHHMM)")
 argparser.add_argument("enddate", type=str, help="end date (YYYYMMDDHHMM)")
+argparser.add_argument("outfile", type=str, help="output file")
 argparser.add_argument("profile", type=str, help="configuration profile to use")
 args = argparser.parse_args()
 
@@ -127,12 +129,10 @@ gauge_obs = gauge_obs_
 
 print("Collecting radar-gauge pairs... ", end="", flush=True)
 
-r_sum = 0.0
-g_sum = 0.0
-n_samples = 0
-
 r_thr = float(config["thresholds"]["radar"])
 g_thr = float(config["thresholds"]["gauge"])
+
+radar_gauge_pairs = {}
 
 # collect radar-gauge pairs
 for radar_ts in sorted(radar_rain_accum.keys()):
@@ -153,8 +153,14 @@ for radar_ts in sorted(radar_rain_accum.keys()):
                 r_obs = radar_rain_accum_cur[y_, x_]
                 g_obs = g[1]
                 if r_obs >= r_thr and g_obs >= g_thr:
-                    r_sum += r_obs
-                    g_sum += g_obs
-                    n_samples += 1
+                    if not radar_ts in radar_gauge_pairs.keys():
+                        radar_gauge_pairs[radar_ts] = []
+                    radar_gauge_pairs[radar_ts].append((r_obs, g_obs))
+
+print("done.")
+
+print(f"Writing to output file {args.outfile}... ", end="", flush=True)
+
+pickle.dump(radar_gauge_pairs, open(args.outfile, "wb"))
 
 print("done.")
