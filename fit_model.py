@@ -8,8 +8,8 @@ from datetime import datetime, timedelta
 import numpy as np
 import os
 import pyproj
+import requests
 import sys
-from cldb import cldb, conversions
 import radar_archive
 
 # Parse command-line arguments.
@@ -45,33 +45,56 @@ R = {}
 while curdate <= enddate:
     fn = browser.listfiles(curdate)
 
-    print("Reading input file %s... " % os.path.basename(fn[0][0]), end="")
+    print("Reading input file %s... " % os.path.basename(fn[0][0]), end="", flush=True)
 
-    sys.stdout.flush()
     # TODO: Implement your own importer for reading the radar data. This is for
     # testing purposes.
     from numpy import random
 
-    R[fn[1][0]] = random.normal(size=(1000, 1000))
+    R[fn[1][0]] = random.normal(size=(1000, 1000)) + 5.0
     #
 
-    print("Done.")
+    print("done.")
 
     curdate += timedelta(minutes=int(config_radar["timestep"]))
 
-# Read gauge data from the cldb database.
-cldb_client = cldb.CLDBClient(
-    config_gauge["cldb_username"], config_gauge["cldb_password"]
-)
+# read gauge observations from SmartMet
 
 cols = ["lpnn", "lat", "lat_sec", "lon", "lon_sec", "grlat", "grlon", "nvl(elstat,0)"]
 col_names = ["lpnn", "lat", "lat_sec", "lon", "lon_sec", "grlat", "grlon", "elstat"]
 
-print("Querying gauge locations from the database... ", end="")
-sys.stdout.flush()
+print("Querying gauge observations from SmartMet... ", end="", flush=True)
 
-gauges = cldb_client.query_stations_fmi(cols, column_names=col_names)
-gauges = conversions.station_list_to_lonlatalt(gauges)
+payload = {
+    "bbox": "18.6,57.93,34.903,69.005",
+    "producer": "observations_fmi",
+    "param": "stationname,"
+    "fmisid,"
+    "localtime,"
+    "latitude,"
+    "longitude," + config_gauge["gauge_type"],
+    "starttime": "2021-06-23T12:00:00",
+    "endtime": "2021-06-23T17:00:00",
+    "timestep": "data",
+    "format": "json",
+}
+
+result = requests.get("http://smartmet.fmi.fi/timeseries", params=payload).json()
+
+gauge_lonlat = set()
+gauge_obs = []
+for i, r in enumerate(result):
+    obstime = datetime.strptime(r["localtime"], "%Y%m%dT%H%M%S")
+    fmisids = r["fmisid"].strip("[").strip("]").split(" ")
+    longitudes = [float(v) for v in r["longitude"].strip("[").strip("]").split(" ")]
+    latitudes = [float(v) for v in r["latitude"].strip("[").strip("]").split(" ")]
+    observations = [
+        float(v) for v in r[config_gauge["gauge_type"]].strip("[").strip("]").split(" ")
+    ]
+    for fmisid, lon, lat, obs in zip(fmisids, longitudes, latitudes, observations):
+        if fmisid != "nan":
+            gauge_lonlat.add((fmisid, lon, lat))
+            gauge_obs.append((obstime, fmisid, obs))
 
 # convert the lon-lat coordinates into grid coordinates (pixels)
 pr = pyproj.Proj(config_radar["projection"])
@@ -81,56 +104,28 @@ x2, y2 = pr(config_radar["bbox_ur_lon"], config_radar["bbox_ur_lat"])
 
 R_shape = list(R.values())[0].shape
 
-for g in gauges:
-    lon, lat = g[1], g[2]
-    x, y = pr(lon, lat)
+gauge_xy = set()
+for g in gauge_lonlat:
+    x, y = pr(g[1], g[2])
     x = (x - x1) / (x2 - x1) * (R_shape[1] - 1) + 0.5
     y = (y2 - y) / (y2 - y1) * (R_shape[0] - 1) + 0.5
-    g[1] = x
-    g[2] = y
+    gauge_xy.add((g[0], x, y))
 
-print("Done.")
+print("done.")
 
-print("Reading gauge measurements from the database... ", end="")
-sys.stdout.flush()
-
-if config_gauge["gauge_type"] == "intensity":
-    gauge_obs = cldb_client.query_precip_int(
-        args.startdate,
-        args.enddate,
-        50,
-        sort_by_timestamp=True,
-        convert_timestamps=True,
-    )
-else:
-    gauge_obs = cldb_client.query_precip_accum_fmi(
-        args.startdate,
-        args.enddate,
-        int(config_gauge["accum_time"]),
-        50,
-        sort_by_timestamp=True,
-        convert_timestamps=True,
-    )
-
-print("Done.")
-
-# Arrange gauge locations into a dictionary.
+# insert gauge locations into a dictionary
 gauges_ = {}
-for r in gauges:
-    r = tuple(r)
+for r in gauge_xy:
     gauges_[r[0]] = r[1:]
 gauges = gauges_
 
-# Arrange gauge observations into a dictionary.
-# gauge_obs = dict([(r[0], r[1:]) for r in gauge_obs])
+# insert gauge observations into a dictionary
 gauge_obs_ = defaultdict(list)
 for r in gauge_obs:
-    r = tuple(r)
     gauge_obs_[r[0]].append(r[1:])
 gauge_obs = gauge_obs_
 
-print("Collecting radar-gauge pairs... ", end="")
-sys.stdout.flush()
+print("Collecting radar-gauge pairs... ", end="", flush=True)
 
 r_sum = 0.0
 g_sum = 0.0
@@ -142,8 +137,8 @@ for radar_ts in sorted(R.keys()):
     if radar_ts in gauge_obs.keys():
         g_cur = gauge_obs[radar_ts]
         for g in g_cur:
-            lpnn = g[0]
-            x, y = gauges[lpnn][0], gauges[lpnn][1]
+            fmisid = g[0]
+            x, y = gauges[fmisid][0], gauges[fmisid][1]
             x_ = int(np.round(x))
             y_ = int(np.round(y))
             if x_ >= 0.0 and y_ >= 0.0 and x_ <= R_shape[1] and y_ < R_shape[0]:
@@ -155,7 +150,7 @@ for radar_ts in sorted(R.keys()):
                     g_sum += g_obs
                     n_samples += 1
 
-print("Done.")
+print("done.")
 
 MFB = 10 * np.log10(g_sum) / (10 * np.log10(r_sum))
 print("MFB = %.3f , no. samples = %d" % (MFB, n_samples))
