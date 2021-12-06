@@ -59,8 +59,8 @@ class KalmanFilterMFB:
         if Y is not None:
             sigma_M = self.__sigma_Y ** 2 - self.__sigma_beta ** 2
             K = _kalman_gain(P_minus, sigma_M)
-            self.__beta = beta_minus + np.dot(K, Y - beta_minus)
-            self.__P = np.dot((1 - K), P_minus)
+            self.__beta = beta_minus + K * (Y - beta_minus)
+            self.__P = (1 - K) * P_minus
         else:
             self.__beta = beta_minus
             self.__P = (1.0 - self.__rho_beta ** 2) * self.__sigma_beta ** 2
@@ -68,7 +68,7 @@ class KalmanFilterMFB:
 
 # the Kalman gain defined by equation (9)
 def _kalman_gain(P_minus, sigma_M):
-    return np.dot(P_minus, la.inv(P_minus + sigma_M ** 2))
+    return P_minus * 1.0 / (P_minus + sigma_M ** 2)
 
 
 # the stationary process variance defined by equation (3)
