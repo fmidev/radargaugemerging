@@ -16,7 +16,8 @@ import numpy as np
 
 
 class KalmanFilterMFB:
-    """The Kalman filter model described in Chumchean et al., Fig. 1."""
+    """The Kalman filter model described in Chumchean et al., Fig. 1. The
+    filter models the mean field bias beta and its variance denoted by P."""
 
     def __init__(self, rho_beta=0.72, sigma_beta=0.068, sigma_Y=0.25):
         """Initialize the model.
@@ -41,7 +42,7 @@ class KalmanFilterMFB:
         self.__sigma_Y = sigma_Y
 
     def predict(self):
-        """Compute the predicted state for the next time step."""
+        """Compute the predicted state (beta_minus, P_minus) for the next time step."""
         beta_minus = self.__rho_beta * self.__beta
         P_minus = (
             self.__rho_beta ** 2 * self.__P
