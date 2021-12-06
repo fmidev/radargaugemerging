@@ -65,6 +65,16 @@ class KalmanFilterMFB:
             self.__beta = beta_minus
             self.__P = (1.0 - self.__rho_beta ** 2) * self.__sigma_beta ** 2
 
+    @property
+    def beta(self):
+        """The current estimate for the mean field bias denoted by beta."""
+        return self.__beta
+
+    @property
+    def P(self):
+        """The current estimate for variance of the mean field bias denoted by P."""
+        return self.__P
+
 
 # the Kalman gain defined by equation (9)
 def _kalman_gain(P_minus, sigma_M):
