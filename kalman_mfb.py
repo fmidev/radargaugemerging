@@ -11,9 +11,6 @@ The method is applied to the logarithmic radar-gauge mean field bias
 
 where the summation is done over all radar-gauge pairs in the domain."""
 
-from numpy import linalg as la
-import numpy as np
-
 
 class KalmanFilterMFB:
     """The Kalman filter model described in Chumchean et al., Fig. 1. The
