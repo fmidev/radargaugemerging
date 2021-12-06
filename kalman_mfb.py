@@ -15,7 +15,7 @@ from numpy import linalg as la
 import numpy as np
 
 
-class KalmabFilterMFB:
+class KalmanFilterMFB:
     """The Kalman filter model described in Chumchean et al., Fig. 1."""
 
     def __init__(self, rho_beta=0.72, sigma_beta=0.068, sigma_Y=0.25):
