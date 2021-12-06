@@ -75,8 +75,8 @@ payload = {
     "localtime,"
     "latitude,"
     "longitude," + config_gauge["gauge_type"],
-    "starttime": "2021-06-23T12:00:00",
-    "endtime": "2021-06-23T17:00:00",
+    "starttime": datetime.strftime(startdate, "%Y-%m-%dT%H:%M:%S"),
+    "endtime": datetime.strftime(enddate, "%Y-%m-%dT%H:%M:%S"),
     "timestep": "data",
     "format": "json",
 }
