@@ -44,20 +44,12 @@ browser = radar_archive.Browser(
 
 # read radar data from the archive
 curdate = startdate
-radar_rain_accum = {}
+radar_filenames = {}
 while curdate <= enddate:
     fn = browser.listfiles(curdate)
-
-    print("Reading input file %s... " % os.path.basename(fn[0][0]), end="", flush=True)
-
-    # TODO: Implement your own importer for reading the radar data. This is for
-    # testing purposes.
-    from numpy import random
-
-    radar_rain_accum[fn[1][0]] = random.normal(size=(1000, 1000)) + 5.0
-    #
-
-    print("done.")
+    if os.path.exists(fn[0][0]):
+        radar_filenames[fn[1][0]] = fn[0][0]
+        print("Found input file %s." % os.path.basename(fn[0][0]))
 
     curdate += timedelta(minutes=int(config_radar["timestep"]))
 
@@ -104,13 +96,11 @@ pr = pyproj.Proj(config_radar["projection"])
 x1, y1 = pr(config_radar["bbox_ll_lon"], config_radar["bbox_ll_lat"])
 x2, y2 = pr(config_radar["bbox_ur_lon"], config_radar["bbox_ur_lat"])
 
-radar_rain_accum_shape = list(radar_rain_accum.values())[0].shape
-
 gauge_xy = set()
 for g in gauge_lonlat:
     x, y = pr(g[1], g[2])
-    x = (x - x1) / (x2 - x1) * (radar_rain_accum_shape[1] - 1) + 0.5
-    y = (y2 - y) / (y2 - y1) * (radar_rain_accum_shape[0] - 1) + 0.5
+    x = (x - x1) / (x2 - x1)
+    y = (y2 - y) / (y2 - y1)
     gauge_xy.add((g[0], x, y))
 
 print("done.")
@@ -135,15 +125,20 @@ g_thr = float(config["thresholds"]["gauge"])
 radar_gauge_pairs = {}
 
 # collect radar-gauge pairs
-for radar_ts in sorted(radar_rain_accum.keys()):
-    radar_rain_accum_cur = radar_rain_accum[radar_ts]
+for radar_ts in sorted(radar_filenames.keys()):
+    # TODO: Implement your own importer for reading the radar data. This is for
+    # testing purposes.
+    radar_rain_accum_cur = np.random.normal(size=(1000, 1000)) + 5.0
+    #
+    radar_rain_accum_shape = radar_rain_accum_cur.shape
+
     if radar_ts in gauge_obs.keys():
         g_cur = gauge_obs[radar_ts]
         for g in g_cur:
             fmisid = g[0]
             x, y = gauges[fmisid][0], gauges[fmisid][1]
-            x_ = int(np.round(x))
-            y_ = int(np.round(y))
+            x_ = int(np.round(x * radar_rain_accum_shape[1]))
+            y_ = int(np.round(y * radar_rain_accum_shape[0]))
             if (
                 x_ >= 0.0
                 and y_ >= 0.0
