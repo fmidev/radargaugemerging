@@ -137,12 +137,12 @@ for radar_ts in sorted(radar_filenames.keys()):
         for g in g_cur:
             fmisid = g[0]
             x, y = gauges[fmisid][0], gauges[fmisid][1]
-            x_ = int(np.round(x * radar_rain_accum_shape[1]))
-            y_ = int(np.round(y * radar_rain_accum_shape[0]))
+            x_ = int(np.floor(x * radar_rain_accum_shape[1]))
+            y_ = int(np.floor(y * radar_rain_accum_shape[0]))
             if (
                 x_ >= 0.0
                 and y_ >= 0.0
-                and x_ <= radar_rain_accum_shape[1]
+                and x_ < radar_rain_accum_shape[1]
                 and y_ < radar_rain_accum_shape[0]
             ):
                 r_obs = radar_rain_accum_cur[y_, x_]
