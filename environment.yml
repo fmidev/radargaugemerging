@@ -75,6 +75,7 @@ dependencies:
   - pyproj=3.3.0=py39h1b810de_0
   - pysocks=1.7.1=py39hf3d152e_4
   - python=3.9.7=hb7a2778_3_cpython
+  - pyyaml=6.0=py39h3811e60_3
   - python_abi=3.9=2_cp39
   - readline=8.1=h46c0cb4_0
   - regex=2021.11.10=py39h3811e60_0
