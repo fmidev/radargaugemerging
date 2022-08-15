@@ -12,7 +12,8 @@ except ImportError:
 
 def import_fmi_pgm(filename, gzipped=False, **kwargs):
     """
-    Import a 8-bit PGM radar reflectivity composite from the FMI archive.
+    Import a 8-bit PGM radar reflectivity composite from the FMI archive and
+    convert it to precipitation rate (mm/h).
 
     Parameters
     ----------
@@ -53,6 +54,10 @@ def import_fmi_pgm(filename, gzipped=False, **kwargs):
     precip = precip.astype(float)
     precip[mask] = np.nan
     precip = (precip - 64.0) / 2.0
+
+    # convert from dBZ to rain rate (mm/h)
+    precip = 10.0 ** (precip / 10.0)
+    precip = (precip / 223.0) ** (1.0 / 1.53)
 
     metadata = geodata
     metadata["institution"] = "Finnish Meteorological Institute"
