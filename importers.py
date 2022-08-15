@@ -19,7 +19,7 @@ def get_method(name):
         raise NotImplementedError(f"importer {name} not implemented")
 
 
-def import_pgm(filename, gzipped=False, **kwargs):
+def import_pgm(filename, gzipped=True, **kwargs):
     """
     Import a 8-bit PGM radar reflectivity composite from the FMI archive and
     convert it to precipitation rate (mm/h).
