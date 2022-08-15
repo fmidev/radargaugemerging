@@ -212,7 +212,6 @@ while radar_ts <= enddate:
                     if r_obs >= r_thr and g_obs >= g_thr:
                         if not radar_ts in radar_gauge_pairs.keys():
                             radar_gauge_pairs[radar_ts] = []
-                        print(r_obs, g_obs)
                         radar_gauge_pairs[radar_ts].append((r_obs, g_obs))
 
     radar_ts += timedelta(minutes=gauge_accum_period)
