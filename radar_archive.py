@@ -77,7 +77,7 @@ def _find_by_date(
         timestamps.append(curdate)
 
     if all(filename is None for filename in filenames):
-        raise IOError("no input data found in %s" % root_path)
+        raise FileNotFoundError("no input data found in %s" % root_path)
 
     if (num_prev_files) > 0:
         return (filenames[::-1], timestamps[::-1])
