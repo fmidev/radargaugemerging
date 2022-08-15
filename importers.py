@@ -10,7 +10,16 @@ except ImportError:
     PYPROJ_IMPORTED = False
 
 
-def import_fmi_pgm(filename, gzipped=False, **kwargs):
+def get_method(name):
+    """Return the given importer method. The currently implemented options are
+    'pgm'."""
+    if name == "pgm":
+        return import_pgm
+    else:
+        raise NotImplementedError(f"importer {name} not implemented")
+
+
+def import_pgm(filename, gzipped=False, **kwargs):
     """
     Import a 8-bit PGM radar reflectivity composite from the FMI archive and
     convert it to precipitation rate (mm/h).
