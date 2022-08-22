@@ -185,12 +185,13 @@ while radar_ts <= enddate:
         )
     else:
         print(
-            f"Computed radar accumulation for {prev_radar_ts} - {radar_ts} by using observations from {num_found} timestamps."
+            f"Computed radar accumulation between {prev_radar_ts} - {radar_ts} by using observations from {num_found} timestamps."
         )
         radar_rain_accum_cur /= num_found
         radar_rain_accum_shape = radar_rain_accum_cur.shape
 
         if radar_ts in gauge_obs.keys():
+            num_radar_gauge_pairs = 0
             g_cur = gauge_obs[radar_ts]
             for g in g_cur:
                 fmisid = g[0]
@@ -213,6 +214,11 @@ while radar_ts <= enddate:
                         if not radar_ts in radar_gauge_pairs.keys():
                             radar_gauge_pairs[radar_ts] = []
                         radar_gauge_pairs[radar_ts].append((r_obs, g_obs))
+                        num_radar_gauge_pairs += 1
+
+            print(
+                f"Collected {num_radar_gauge_pairs} radar-gauge pairs for accumulation period ending at {radar_ts}."
+            )
 
     radar_ts += timedelta(minutes=gauge_accum_period)
 
