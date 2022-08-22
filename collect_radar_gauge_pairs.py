@@ -83,7 +83,7 @@ payload = {
     "producer": "observations_fmi",
     "param": "stationname,"
     "fmisid,"
-    "localtime,"
+    "utctime,"
     "latitude,"
     "longitude," + config_gauge["gauge_type"],
     "starttime": datetime.strftime(startdate, "%Y-%m-%dT%H:%M:%S"),
@@ -97,7 +97,7 @@ result = requests.get("http://smartmet.fmi.fi/timeseries", params=payload).json(
 gauge_lonlat = set()
 gauge_obs = []
 for i, r in enumerate(result):
-    obstime = datetime.strptime(r["localtime"], "%Y%m%dT%H%M%S")
+    obstime = datetime.strptime(r["utctime"], "%Y%m%dT%H%M%S")
     fmisids = r["fmisid"].strip("[").strip("]").split(" ")
     longitudes = [float(v) for v in r["longitude"].strip("[").strip("]").split(" ")]
     latitudes = [float(v) for v in r["latitude"].strip("[").strip("]").split(" ")]
