@@ -86,8 +86,8 @@ payload = {
     "utctime,"
     "latitude,"
     "longitude," + config_gauge["gauge_type"],
-    "starttime": datetime.strftime(startdate, "%Y-%m-%dT%H:%M:%S"),
-    "endtime": datetime.strftime(enddate, "%Y-%m-%dT%H:%M:%S"),
+    "starttime": datetime.strftime(startdate - timedelta(hours=3), "%Y%m%dT%H%M"),
+    "endtime": datetime.strftime(enddate + timedelta(hours=3), "%Y%m%dT%H%M"),
     "timestep": "data",
     "format": "json",
 }
