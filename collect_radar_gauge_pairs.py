@@ -185,7 +185,7 @@ while radar_ts <= enddate:
         )
     else:
         print(
-            f"Computed radar accumulation for {radar_ts} by using observations from {num_found} timestamps."
+            f"Computed radar accumulation for {prev_radar_ts} - {radar_ts} by using observations from {num_found} timestamps."
         )
         radar_rain_accum_cur /= num_found
         radar_rain_accum_shape = radar_rain_accum_cur.shape
