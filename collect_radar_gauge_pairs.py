@@ -122,7 +122,7 @@ for g in gauge_lonlat:
     y = (y2 - y) / (y2 - y1)
     gauge_xy.add((g[0], x, y))
 
-print("done.")
+print(f"{len(result)} gauges found.")
 
 # insert gauge locations into a dictionary
 gauges_ = {}
