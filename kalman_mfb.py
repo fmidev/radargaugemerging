@@ -22,7 +22,7 @@ class KalmanFilterMFB:
         Parameters
         ----------
         rho_beta : float
-
+            Lag-one correlation coefficient of the mean field bias.
         sigma_beta : float
             Stationary variance of the process describing the mean field bias.
         sigma_Y : float
@@ -42,8 +42,8 @@ class KalmanFilterMFB:
         """Compute the predicted state (beta_minus, P_minus) for the next time step."""
         beta_minus = self.__rho_beta * self.__beta
         P_minus = (
-            self.__rho_beta ** 2 * self.__P
-            + (1.0 - self.__rho_beta ** 2) * self.__sigma_beta ** 2
+            self.__rho_beta**2 * self.__P
+            + (1.0 - self.__rho_beta**2) * self.__sigma_beta**2
         )
 
         return beta_minus, P_minus
@@ -54,13 +54,13 @@ class KalmanFilterMFB:
         field bias, denoted by Y. If Y is set to None (i.e. no observation
         available), skip the update step."""
         if Y is not None:
-            sigma_M = self.__sigma_Y ** 2 - self.__sigma_beta ** 2
+            sigma_M = self.__sigma_Y**2 - self.__sigma_beta**2
             K = _kalman_gain(P_minus, sigma_M)
             self.__beta = beta_minus + K * (Y - beta_minus)
             self.__P = (1 - K) * P_minus
         else:
             self.__beta = beta_minus
-            self.__P = (1.0 - self.__rho_beta ** 2) * self.__sigma_beta ** 2
+            self.__P = (1.0 - self.__rho_beta**2) * self.__sigma_beta**2
 
     @property
     def beta(self):
@@ -75,9 +75,9 @@ class KalmanFilterMFB:
 
 # the Kalman gain defined by equation (9)
 def _kalman_gain(P_minus, sigma_M):
-    return P_minus * 1.0 / (P_minus + sigma_M ** 2)
+    return P_minus * 1.0 / (P_minus + sigma_M**2)
 
 
 # the stationary process variance defined by equation (3)
 def _sigma_w_2(rho_beta, sigma_beta):
-    return (1.0 - rho_beta ** 2) * sigma_beta ** 2
+    return (1.0 - rho_beta**2) * sigma_beta**2
