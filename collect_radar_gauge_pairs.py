@@ -96,7 +96,6 @@ result = requests.get("http://smartmet.fmi.fi/timeseries", params=payload).json(
 
 gauge_lonlat = set()
 gauge_obs = []
-num_gauges = 0
 for i, r in enumerate(result):
     obstime = datetime.strptime(r["utctime"], "%Y%m%dT%H%M%S")
     if obstime < startdate or obstime > enddate:
@@ -111,7 +110,6 @@ for i, r in enumerate(result):
         if fmisid != "nan":
             gauge_lonlat.add((fmisid, lon, lat))
             gauge_obs.append((obstime, fmisid, obs))
-            num_gauges += 1
 
 # convert the lon-lat coordinates into grid coordinates (pixels)
 pr = pyproj.Proj(config_radar["projection"])
@@ -126,7 +124,7 @@ for g in gauge_lonlat:
     y = (y2 - y) / (y2 - y1)
     gauge_xy.add((g[0], x, y))
 
-print(f"{num_gauges} gauges found.")
+print(f"{len(gauge_xy)} gauges found.")
 
 # insert gauge locations into a dictionary
 gauges_ = {}
