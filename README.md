@@ -40,4 +40,4 @@ The logarithmic MFB estimate
 
 $$\displaystyle\beta_t=\frac{1}{n}\sum_{i=1}^n\log_{10}\left(\frac{G_{i,t}}{R_{i,t}}\right)$$
 
-is stored in the dictionary contained in the above state file. The dictionary has key "kalman_mfb", and the corresponding value contains a kalman_mfb.KalmanFilterMFB object. The above MFB estimate can be accessed from its "beta" attribute.
+is stored in the dictionary contained in the above state file. The dictionary has the key "corr_factor", whose value can be multiplied with radar-measured rain rates/accumulations to obtain the corrected values.
