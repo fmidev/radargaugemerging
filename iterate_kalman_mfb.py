@@ -1,5 +1,3 @@
-# python iterate_kalman_mfb.py 201708121700 test1.dat kalman_mfb_test.dat test
-
 import argparse
 import configparser
 from datetime import datetime
@@ -62,6 +60,10 @@ else:
 
     print(f"Kalman state after update = ({kalman_mfb.beta:.3f}, {kalman_mfb.P:.3f}).")
 
+corr_factor = 10 ** (kalman_mfb.beta + 0.5 * kalman_mfb.P)
+
+print(f"Estimated correction factor = {corr_factor:.03f}")
+
 beta_minus_pr, p_minus_pr = kalman_mfb.predict()
 
 print(
@@ -69,6 +71,10 @@ print(
 )
 
 with open(args.outfile, "wb") as f:
-    print(f"Wrote updated Kalman filter to {args.outfile}.")
-    out_dict = {"kalman_mfb": kalman_mfb, "pred_state": (beta_minus_pr, p_minus_pr)}
+    print(f"Wrote updated Kalman filter and next predicted state to {args.outfile}.")
+    out_dict = {
+        "kalman_mfb": kalman_mfb,
+        "pred_state": (beta_minus_pr, p_minus_pr),
+        "corr_factor": corr_factor,
+    }
     pickle.dump(out_dict, f)
