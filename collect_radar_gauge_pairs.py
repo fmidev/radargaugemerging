@@ -1,6 +1,29 @@
 """For the given time range, fetch radar- and gauge-based rainfall accumulations
-from the FMI databases and collect co-located measurement pairs. Write the
-pairs into the given file as a pickle dump."""
+from the FMI archives/databases and collect co-located measurement pairs. Write
+the pairs into a pickle dump.
+
+Input
+-----
+- Radar composites from the archive
+- Gauge-measured rainfall from SmartMet
+
+Output
+------
+- Pairs of co-located radar- and gauge-based rainfall measurements. The output
+  file is a pickle dump containing a dictionary of the form
+
+  radar_gauge_pairs[timestamp]: [(r_obs_1, g_obs_1),...,(r_obs_n, g_obs_n)]
+
+  where timestamp is a datetime object defining the common time stamp for the
+  radar-gauge pairs. This time stamp is taken as the end time of the accumulation
+  period. The dictionary contains lists of co-located radar-gauge accumulation
+  pairs for time stamps in the range specified by the command-line arguments.
+
+Configuration files (in the config/<profile> directory)
+-------------------------------------------------------
+- collect_radar_gauge_pairs.cfg
+- datasources.cfg
+"""
 
 import argparse
 from collections import defaultdict

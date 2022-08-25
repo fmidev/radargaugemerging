@@ -1,3 +1,27 @@
+"""Iteratively apply Kalman filter to produce mean field bias (MFB) estimates.
+The method is described in:
+
+S. Chumchean, A. Seed and A. Sharma, Correcting of real-time radar rainfall
+bias using a Kalman filtering approach, Journal of Hydrology 317, 123-137,
+2006.
+
+Input
+-----
+- Radar-gauge pair file produced by running collect_radar_gauge_pairs.py.
+- Previous MFB estimator state produced by running this script. If not given,
+  a new estimator is initialized.
+
+Output
+------
+- The current MFB estimator state obtained by updating the Kalman filter. The
+update is done by using the previous Kalman filter prediction and the MFB
+computed from the current observations.
+
+Configuration files (in the config/<profile> directory)
+-------------------------------------------------------
+- kalman_filter_mfb.cfg
+"""
+
 import argparse
 import configparser
 from datetime import datetime
