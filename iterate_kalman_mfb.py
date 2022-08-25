@@ -76,7 +76,7 @@ else:
     if n > 0:
         Y /= n
     else:
-        Y = np.nan
+        Y = None
 
     print(f"Computed log-mean field bias = {Y:.3f} from observations at {str(date)}.")
 
