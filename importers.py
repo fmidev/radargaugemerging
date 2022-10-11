@@ -3,6 +3,13 @@ from matplotlib.pyplot import imread
 import numpy as np
 
 try:
+    import h5py
+
+    H5PY_IMPORTED = True
+except ImportError:
+    H5PY_IMPORTED = False
+
+try:
     import pyproj
 
     PYPROJ_IMPORTED = True
@@ -27,11 +34,14 @@ def import_pgm(filename, gzipped=True, **kwargs):
     Parameters
     ----------
     filename: str
-        Name of the file to import.
+        Name of the file to read.
     gzipped: bool
         If True, the input file is treated as a compressed gzip file.
 
-    {extra_kwargs_doc}
+    Raises
+    ------
+    ModuleNotFoundError
+        If pyproj was not found.
 
     Returns
     -------
@@ -46,11 +56,7 @@ def import_pgm(filename, gzipped=True, **kwargs):
     not set.
     """
     if not PYPROJ_IMPORTED:
-        raise ImportError(
-            "pyproj package is required to import "
-            "FMI's radar reflectivity composite "
-            "but it is not installed"
-        )
+        raise ModuleNotFoundError("pyproj is required but not installed")
 
     if gzipped is False:
         precip = imread(filename)
@@ -79,6 +85,104 @@ def import_pgm(filename, gzipped=True, **kwargs):
     metadata["zr_b"] = 1.53
 
     return precip, metadata
+
+
+def import_opera_odim_hdf5(filename, quantity="DBZH", **kwargs):
+    """Read a composite from a OPERA ODIM HDF5 file.
+
+    Parameters
+    ----------
+    filename : str
+        Name of the file to read.
+    quantity : the quantity to read
+        ACRR: hourly accumulated rainfall (mm)
+        DBZH: reflectivity (dBZ)
+        RATE: rainfall rate (mm/h)
+
+    Raises
+    ------
+    KeyError
+        If the requested quantity was not found.
+    ModuleNotFoundError
+        If h5py or pyproj was not found.
+    OSError
+        If the input file could not be read.
+
+    Returns
+    -------
+    out : tuple
+        A two-element tuple containing the radar composite in a numpy array and
+        the metadata dictionary.
+    """
+    if not H5PY_IMPORTED:
+        raise ModuleNotFoundError("h5py required for reading HDF5 files but not found")
+
+    if not PYPROJ_IMPORTED:
+        raise ModuleNotFoundError("pyproj is required but not installed")
+
+    f = h5py.File(filename, "r")
+
+    data_found = False
+
+    for k in f.keys():
+        if "dataset" in k:
+            qty = f[k]["what"].attrs["quantity"]
+            if qty.decode() == quantity:
+                data_found = True
+
+                data = f[k]["data1"]["data"][...]
+                nodata_mask = data == f[k]["what"].attrs["nodata"]
+
+                radar_composite = data.astype(np.float32)
+
+                gain = f[k]["what"].attrs["gain"]
+                offset = f[k]["what"].attrs["offset"]
+
+                radar_composite = radar_composite * gain + offset
+                radar_composite[nodata_mask] = 0.0
+
+                metadata = {}
+                projection = f["where"].attrs["projdef"].decode()
+
+                metadata["projection"] = projection
+
+                ll_lon = f["where"].attrs["LL_lon"]
+                ll_lat = f["where"].attrs["LL_lat"]
+                ur_lon = f["where"].attrs["UR_lon"]
+                ur_lat = f["where"].attrs["UR_lat"]
+
+                pr = pyproj.Proj(projection)
+                ll_x, ll_y = pr(ll_lon, ll_lat)
+                ur_x, ur_y = pr(ur_lon, ur_lat)
+
+                metadata["ll_x"] = ll_x
+                metadata["ll_y"] = ll_y
+                metadata["ur_x"] = ur_x
+                metadata["ur_y"] = ur_y
+
+                xpixelsize = f["where"].attrs["xscale"]
+                ypixelsize = f["where"].attrs["yscale"]
+
+                metadata["xpixelsize"] = xpixelsize
+                metadata["ypixelsize"] = ypixelsize
+
+                metadata["institution"] = "Finnish Meteorological Institute"
+                metadata["timestep"] = 5
+                if quantity == "ACRR":
+                    metadata["unit"] = "mm"
+                elif quantity == "DBZH":
+                    metadata["unit"] = "dBZ"
+                elif quantity == "RATE":
+                    metadata["unit"] = "mm/h"
+
+                break
+
+    f.close()
+
+    if not data_found:
+        raise KeyError(f"no composite for quantity '{quantity}' found from {filename}")
+    else:
+        return radar_composite, metadata
 
 
 def _import_fmi_pgm_geodata(metadata):
