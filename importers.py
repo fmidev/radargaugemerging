@@ -134,6 +134,7 @@ def import_opera_odim_hdf5(filename, quantity="DBZH", **kwargs):
 
                 data = f[k]["data1"]["data"][...]
                 nodata_mask = data == f[k]["what"].attrs["nodata"]
+                undetect_mask = data == f[k]["what"].attrs["undetect"]
 
                 radar_composite = data.astype(np.float32)
 
@@ -141,7 +142,13 @@ def import_opera_odim_hdf5(filename, quantity="DBZH", **kwargs):
                 offset = f[k]["what"].attrs["offset"]
 
                 radar_composite = radar_composite * gain + offset
+
                 radar_composite[nodata_mask] = np.nan
+
+                if quantity != "DBZH":
+                    radar_composite[undetect_mask] = offset
+                else:
+                    radar_composite[undetect_mask] = -30.0
 
                 metadata = {}
                 projection = f["where"].attrs["projdef"].decode()
