@@ -19,8 +19,10 @@ except ImportError:
 
 def get_method(name):
     """Return the given importer method. The currently implemented options are
-    'pgm'."""
-    if name == "pgm":
+    'odim_hdf5' and 'pgm'."""
+    if name == "odim_hdf5":
+        return import_opera_odim_hdf5
+    elif name == "pgm":
         return import_pgm
     else:
         raise NotImplementedError(f"importer {name} not implemented")
