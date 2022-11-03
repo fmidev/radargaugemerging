@@ -89,7 +89,7 @@ while curdate <= enddate:
 
         if os.path.exists(fn[0][0]):
             radar_filenames[fn[1][0]] = fn[0][0]
-            print("Found input file %s." % os.path.basename(fn[0][0]))
+            # print("Found input file %s." % os.path.basename(fn[0][0]))
     except FileNotFoundError:
         pass
 
@@ -99,7 +99,7 @@ while curdate <= enddate:
 cols = ["lpnn", "lat", "lat_sec", "lon", "lon_sec", "grlat", "grlon", "nvl(elstat,0)"]
 col_names = ["lpnn", "lat", "lat_sec", "lon", "lon_sec", "grlat", "grlon", "elstat"]
 
-print("Querying gauge observations from SmartMet... ", end="", flush=True)
+print("Querying gauge observations from SmartMet: ", end="", flush=True)
 
 payload = {
     "bbox": "18.6,57.93,34.903,69.005",
@@ -147,7 +147,7 @@ for g in gauge_lonlat:
     y = (y2 - y) / (y2 - y1)
     gauge_xy.add((g[0], x, y))
 
-print(f"{len(gauge_xy)} gauges found.")
+print(f"{len(gauge_obs)} observations from {len(gauge_xy)} gauges found.")
 
 # insert gauge locations into a dictionary
 gauges_ = {}
@@ -160,8 +160,6 @@ gauge_obs_ = defaultdict(list)
 for r in gauge_obs:
     gauge_obs_[r[0]].append(r[1:])
 gauge_obs = gauge_obs_
-
-print("Collecting radar-gauge pairs:")
 
 r_thr = float(config["thresholds"]["radar"])
 g_thr = float(config["thresholds"]["gauge"])
@@ -177,9 +175,13 @@ def _compute_nearest_distance(gauge_lonlat):
     pass
 
 
-# collect radar-gauge pairs
+# collect radar-gauge observation pairs
 radar_ts = startdate
 while radar_ts <= enddate:
+    print(
+        f"Collecting radar-gauge pairs between {enddate - timedelta(minutes=gauge_accum_period)} - {enddate}:"
+    )
+
     importer = importers.get_method(config_radar["importer"])
 
     # Read radar measurements from the gauge accumulation period.
@@ -206,11 +208,11 @@ while radar_ts <= enddate:
 
     if num_missing > int(config["missing_values"]["max_missing_radar_timestamps"]):
         print(
-            f"Not enough previous files found for {radar_ts} for computing accumulated rainfall, skipping."
+            f"  Skipping {radar_ts}: not enough previous files found for computing accumulated radar rainfall."
         )
     else:
         print(
-            f"Computed radar accumulation between {prev_radar_ts} - {radar_ts} by using observations from {num_found} timestamps."
+            f"  Computed radar accumulation between {prev_radar_ts} - {radar_ts} from {num_found} time stamps."
         )
         radar_rain_accum_cur /= num_found
         radar_rain_accum_shape = radar_rain_accum_cur.shape
@@ -241,16 +243,10 @@ while radar_ts <= enddate:
                         radar_gauge_pairs[radar_ts].append((r_obs, g_obs))
                         num_radar_gauge_pairs += 1
 
-            print(
-                f"Collected {num_radar_gauge_pairs} radar-gauge pairs for accumulation period ending at {radar_ts}."
-            )
+            print(f"  Collected {num_radar_gauge_pairs} radar-gauge pairs.")
 
     radar_ts += timedelta(minutes=gauge_accum_period)
 
-print("done.")
-
-print(f"Writing to output file {args.outfile}... ", end="", flush=True)
+print(f"Wrote output to {args.outfile}.")
 
 pickle.dump(radar_gauge_pairs, open(args.outfile, "wb"))
-
-print("done.")
