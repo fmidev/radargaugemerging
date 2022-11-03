@@ -223,6 +223,17 @@ while radar_ts <= enddate:
 
     radar_ts += timedelta(minutes=gauge_accum_period)
 
+mae = 0.0
+n = 0
+for p1 in radar_gauge_pairs.values():
+    for p2 in p1:
+        mae += abs(p2[0] - p2[1])
+        n += 1
+
+mae = mae / n if n > 0 else np.nan
+
+print(f"Mean absolute radar-gauge error: {mae}")
+
 print(f"Wrote output to {args.outfile}.")
 
 pickle.dump(radar_gauge_pairs, open(args.outfile, "wb"))
