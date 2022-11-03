@@ -39,6 +39,7 @@ import requests
 
 import importers
 import radar_archive
+import util
 
 # parse command-line arguments
 argparser = argparse.ArgumentParser()
@@ -64,9 +65,7 @@ config_gauge = config_ds["gauge"]
 with open(os.path.join("config", args.profile, "radar_locations.yaml"), "r") as f:
     config_radarlocs = yaml.safe_load(f)
 
-radar_locs = {}
-for radar in config_radarlocs.keys():
-    radar_locs[radar] = tuple([float(v) for v in config_radarlocs[radar].split(",")])
+radar_locs = util.read_radar_locations(config_radarlocs)
 
 radar_timestep = int(config_radar["timestep"])
 radar_accum_period = int(config_ds["radar"]["accum_period"])
