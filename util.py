@@ -4,7 +4,9 @@ from datetime import datetime, timedelta
 import requests
 
 
-def query_rain_gauges(startdate, enddate, config):
+def query_rain_gauges(
+    startdate, enddate, config, ll_lon=None, ll_lat=None, ur_lon=None, ur_lat=None
+):
     """Query rain gauge observations and the corresponding gauge locations from
     SmartMet in the given date range.
 
@@ -16,6 +18,8 @@ def query_rain_gauges(startdate, enddate, config):
         End date for querying the gauge observations.
     config : dict
         Configuration dictionary read from datasources.cfg, gauge subsection.
+    ll_lon, ll_lat, ur_lon, ur_lat : float
+        Bounding box coordinates. Gauges outside the box are not included.
 
     Returns
     -------
@@ -52,6 +56,14 @@ def query_rain_gauges(startdate, enddate, config):
         ]
         for fmisid, lon, lat, obs in zip(fmisids, longitudes, latitudes, observations):
             if fmisid != "nan":
+                if ll_lon is not None and lon < ll_lon:
+                    continue
+                if ll_lat is not None and lat < ll_lat:
+                    continue
+                if ur_lon is not None and lon > ur_lon:
+                    continue
+                if ur_lat is not None and lat > ur_lat:
+                    continue
                 gauge_lonlat.add((fmisid, lon, lat))
                 gauge_obs.append((obstime, fmisid, obs))
 
