@@ -12,7 +12,7 @@ Output
 Pairs of co-located radar- and gauge-based rainfall measurements. The output
 file is a pickle dump containing a dictionary of the form
 
-  radar_gauge_pairs[timestamp]: [(r_obs_1, g_obs_1),...,(r_obs_n, g_obs_n)]
+  radar_gauge_pairs[timestamp][fmisid]: [(r_obs_1, g_obs_1),...,(r_obs_n, g_obs_n)]
 
 where timestamp is a datetime object defining the common time stamp for the
 radar-gauge pairs. This time stamp is taken as the end time of the accumulation
@@ -140,7 +140,7 @@ gauge_obs = gauge_obs_
 r_thr = float(config["thresholds"]["radar"])
 g_thr = float(config["thresholds"]["gauge"])
 
-radar_gauge_pairs = {}
+radar_gauge_pairs = defaultdict(dict)
 
 rgpair_attribs = config["other"]["attributes"].split(",")
 
@@ -214,9 +214,7 @@ while radar_ts <= enddate:
                         dist = _compute_nearest_distance(gauge_lonlats[fmisid])
 
                     if r_obs >= r_thr and g_obs >= g_thr:
-                        if not radar_ts in radar_gauge_pairs.keys():
-                            radar_gauge_pairs[radar_ts] = []
-                        radar_gauge_pairs[radar_ts].append((r_obs, g_obs))
+                        radar_gauge_pairs[radar_ts][int(fmisid)] = (r_obs, g_obs)
                         num_radar_gauge_pairs += 1
 
             print(f"  Collected {num_radar_gauge_pairs} radar-gauge pairs.")
@@ -225,8 +223,9 @@ while radar_ts <= enddate:
 
 mae = 0.0
 n = 0
+print(radar_gauge_pairs.values())
 for p1 in radar_gauge_pairs.values():
-    for p2 in p1:
+    for p2 in p1.values():
         mae += abs(p2[0] - p2[1])
         n += 1
 
