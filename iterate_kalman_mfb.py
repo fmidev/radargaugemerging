@@ -13,7 +13,7 @@ Input
 
 Output
 ------
-- The current MFB estimator state obtained by updating the Kalman filter. The
+The current MFB estimator state obtained by updating the Kalman filter. The
 update is done by using the previous Kalman filter prediction and the MFB
 computed from the current observations.
 
@@ -65,11 +65,13 @@ else:
         kalman_mfb = prev_state["kalman_mfb"]
         pred_state = prev_state["pred_state"]
 
+    # compute MFB from the previous state
     Y = 0.0
     n = 0
     for ts in radar_gauge_pairs.keys():
         if ts == date:
-            for p in radar_gauge_pairs[ts]:
+            for sid in radar_gauge_pairs[ts].keys():
+                p = radar_gauge_pairs[ts][sid]
                 Y += np.log10(p[1] / p[0])
                 n += 1
 
