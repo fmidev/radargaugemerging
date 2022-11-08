@@ -230,6 +230,7 @@ for p1 in radar_gauge_pairs.values():
 
 mae = mae / n if n > 0 else np.nan
 
+print(f"Total number of radar-gauge pairs: {n}")
 print(f"Mean absolute radar-gauge error: {mae}")
 
 print(f"Wrote output to {args.outfile}.")
