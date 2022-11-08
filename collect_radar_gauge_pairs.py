@@ -223,7 +223,6 @@ while radar_ts <= enddate:
 
 mae = 0.0
 n = 0
-print(radar_gauge_pairs.values())
 for p1 in radar_gauge_pairs.values():
     for p2 in p1.values():
         mae += abs(p2[0] - p2[1])
