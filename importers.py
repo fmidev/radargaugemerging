@@ -10,6 +10,13 @@ except ImportError:
     H5PY_IMPORTED = False
 
 try:
+    import netCDF4
+
+    NETCDF4_IMPORTED = True
+except ImportError:
+    NETCDF4_IMPORTED = False
+
+try:
     import pyproj
 
     PYPROJ_IMPORTED = True
@@ -41,6 +48,8 @@ def import_netcdf(filename, corr_refl=True, **kwargs):
     """Import a NetCDF file produced by radar_composite_generator."""
     if not XARRAY_IMPORTED:
         raise ModuleNotFoundError("xarray is required but not installed")
+    if not NETCDF4_IMPORTED:
+        raise ModuleNotFoundError("netCDF4 is required but not installed")
 
     ds = xr.load_dataset(filename)
     qty = "DBZHC" if corr_refl else "DBZH"
