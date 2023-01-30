@@ -16,16 +16,37 @@ try:
 except ImportError:
     PYPROJ_IMPORTED = False
 
+try:
+    import xarray as xr
+
+    XARRAY_IMPORTED = True
+except ImportError:
+    XARRAY_IMPORTED = False
+
 
 def get_method(name):
     """Return the given importer method. The currently implemented options are
-    'odim_hdf5' and 'pgm'."""
-    if name == "odim_hdf5":
+    'netcdf', 'odim_hdf5' and 'pgm'."""
+    if name == "netcdf":
+        return import_netcdf
+    elif name == "odim_hdf5":
         return import_opera_odim_hdf5
     elif name == "pgm":
         return import_pgm
     else:
         raise NotImplementedError(f"importer {name} not implemented")
+
+
+def import_netcdf(filename, corr_refl=True, **kwargs):
+    """Import a NetCDF file produced by radar_composite_generator."""
+    ds = xr.load_dataset(filename)
+    qty = "DBZHC" if corr_refl else "DBZH"
+
+    refl = np.array(ds[qty][0])
+    precip = 10.0 ** (refl / 10.0)
+    precip = (precip / 223.0) ** (1.0 / 1.53)
+
+    return precip, dict()
 
 
 def import_pgm(filename, gzipped=True, **kwargs):
