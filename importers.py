@@ -39,6 +39,9 @@ def get_method(name):
 
 def import_netcdf(filename, corr_refl=True, **kwargs):
     """Import a NetCDF file produced by radar_composite_generator."""
+    if not XARRAY_IMPORTED:
+        raise ModuleNotFoundError("xarray is required but not installed")
+
     ds = xr.load_dataset(filename)
     qty = "DBZHC" if corr_refl else "DBZH"
 
