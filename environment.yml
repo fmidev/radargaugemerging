@@ -177,4 +177,4 @@ dependencies:
   - xz=5.2.6=h166bdaf_0
   - yaml=0.2.5=h7f98852_2
   - zstd=1.5.2=h8a70e8d_4
-prefix: /home/users/spulkkin/miniconda3/envs/radargaugemerging
+
