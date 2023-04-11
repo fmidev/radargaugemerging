@@ -33,4 +33,4 @@ COPY . /
 WORKDIR .
 ENV domain hulehenri
 ENV timestamp 202007071130
-ENTRYPOINT conda run -n radargaugemerging python run_radargaugemerging.py --config=$domain --timestamp=$timestamp
+ENTRYPOINT conda run -n radargaugemerging python run_radargaugemerging.py --timestamp=$timestamp --config=$domain
