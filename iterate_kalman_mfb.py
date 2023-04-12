@@ -33,7 +33,7 @@ import numpy as np
 from kalman_mfb import KalmanFilterMFB
 
 
-def run(date, infile, outfile, profile, prevstatefile):
+def run(date, infile, outfile, profile, prevstatefile=None):
     
     config = configparser.ConfigParser()
     config.optionxform = lambda x: x
@@ -98,7 +98,7 @@ def run(date, infile, outfile, profile, prevstatefile):
         
 def main():
 
-    run(args.date, args.infile, args.outfile, args.profile, args.prevstatefile)
+    run(args.date, args.infile, args.outfile, args.profile, prevstatefile=None)
 
 
 
