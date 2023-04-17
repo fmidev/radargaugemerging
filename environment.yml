@@ -45,6 +45,7 @@ dependencies:
   - glib-tools=2.72.1=h6239696_0
   - gst-plugins-base=1.20.3=hf6a322e_0
   - gstreamer=1.20.3=hd4edc92_0
+  - h5py
   - icu=70.1=h27087fc_0
   - idna=3.3=pyhd8ed1ab_0
   - ipython=8.4.0=py310hff52083_0

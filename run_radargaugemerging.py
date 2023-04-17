@@ -10,21 +10,23 @@ def main():
     # Calculate previous timestamp (1 hour before latest)
     timestamp = args.timestamp
     timestamp_formatted = datetime.datetime.strptime(timestamp, "%Y%m%d%H%M")
-    previous_timestamp = ( timestamp_formatted - datetime.timedelta(minutes=60) ).strftime("%Y%m%d%H%M%S")
-    
-    ### Run Kalman filter-based MFB
+    timestamp_minus1h = ( timestamp_formatted - datetime.timedelta(minutes=60) ).strftime("%Y%m%d%H%M")
 
     # Initialize MFB estimator if mfb state file does not exist
     mfb_state_file = args.mfb_state_file.format(config = args.config)
     my_file = Path(mfb_state_file)
     if not my_file.is_file():
-        iterate_kalman_mfb.run(timestamp, radargauge_file, mfb_state_file, args.config, prevstatefile=None)
-    
+        # Collect radar-gauge pair file for earlier timeslot and initialize mfb state file
+        timestamp_minus2h = ( timestamp_formatted - datetime.timedelta(minutes=120) ).strftime("%Y%m%d%H%M")
+        radargauge_file_minus1h = f"radargaugepairs_{timestamp_minus1h}.dat"
+        collect_radar_gauge_pairs.run(timestamp_minus2h, timestamp_minus1h, radargauge_file_minus1h, args.config)
+        iterate_kalman_mfb.run(timestamp_minus1h, radargauge_file_minus1h, mfb_state_file, args.config, prevstatefile=None)
+        
     # Collect the gauge-radar pair file
     radargauge_file = f"radargaugepairs_{timestamp}.dat"
-    collect_radar_gauge_pairs.run(previous_timestamp, timestamp, radargauge_file, args.config)
+    collect_radar_gauge_pairs.run(timestamp_minus1h, timestamp, radargauge_file, args.config)
 
-    # Using the previous MFB state, we can then run
+    # Run Kalman filter based MFB using the previous MFB state
     mfb_state_file = "mfb_state.dat"
     iterate_kalman_mfb.run(timestamp, radargauge_file, mfb_state_file, args.config, prevstatefile=mfb_state_file)
     

@@ -73,7 +73,7 @@ def _find_by_date(
         curdate = date - timedelta(minutes=i * timestep)
         fn = _find_matching_filename(curdate, root_path, path_fmt, fn_pattern, fn_ext)
         filenames.append(fn)
-
+        
         timestamps.append(curdate)
 
     if all(filename is None for filename in filenames):
@@ -88,11 +88,10 @@ def _find_by_date(
 def _find_matching_filename(date, root_path, path_fmt, fn_pattern, fn_ext):
     path = _generate_path(date, root_path, path_fmt)
     fn = None
-
+    
     if os.path.exists(path):
         fn = datetime.strftime(date, fn_pattern) + "." + fn_ext
-
-        # test for wildcars
+        # test for wildcards
         if "?" in fn:
             filenames = os.listdir(path)
             if len(filenames) > 0:

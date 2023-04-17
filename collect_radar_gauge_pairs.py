@@ -76,14 +76,15 @@ def run(startdate, enddate, outfile, profile):
     # read radar file names from the archive
     curdate = startdate
     radar_filenames = {}
+
+    print("curdate, enddate: ", curdate, enddate)
     
     while curdate <= enddate:
         try:
             fn = browser.listfiles(curdate)
-    
             if os.path.exists(fn[0][0]):
                 radar_filenames[fn[1][0]] = fn[0][0]
-                # print("Found input file %s." % os.path.basename(fn[0][0]))
+                print("Found input file %s." % os.path.basename(fn[0][0]))
         except FileNotFoundError:
             pass
     
