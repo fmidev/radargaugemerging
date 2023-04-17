@@ -21,6 +21,7 @@ docker run \
        --mount type=bind,source="$(pwd)"/collect_radar_gauge_pairs.py,target=/collect_radar_gauge_pairs.py \
        --mount type=bind,source="$(pwd)"/iterate_kalman_mfb.py,target=/iterate_kalman_mfb.py \
        --mount type=bind,source="$(pwd)"/radar_archive.py,target=/radar_archive.py \
+       --mount type=bind,source="$(pwd)"/importers.py,target=/importers.py \
        --mount type=bind,source=$INPATH,target=$INPATH \
        --mount type=bind,source=$MFB_STATE_PATH,target=$MFB_STATE_PATH \
        radargaugemerging:latest
