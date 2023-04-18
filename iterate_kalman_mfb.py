@@ -70,7 +70,7 @@ def run(date, infile, outfile, profile, prevstatefile=None):
         else:
             Y = None
     
-        print(f"Computed log-mean field bias = {Y:.3f} from observations at {str(date)}.")
+        print(f"Computed log-mean field bias = {Y} from observations at {str(date)}.")
     
         kalman_mfb.update(pred_state[0], pred_state[1], Y)
     

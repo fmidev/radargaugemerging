@@ -33,5 +33,6 @@ COPY . /
 WORKDIR .
 ENV config hulehenri
 ENV timestamp 202007071130
-ENV mfb_state_file /mfb_state_{config}.dat
-ENTRYPOINT conda run -n radargaugemerging python run_radargaugemerging.py --timestamp=$timestamp --config=$config --mfb_state_file=$mfb_state_file
+ENV path_mfb_state /
+ENV path_radargaugepairs /
+ENTRYPOINT conda run -n radargaugemerging python run_radargaugemerging.py --timestamp=$timestamp --config=$config --path_mfb_state=$path_mfb_state --path_radargaugepairs=$path_radargaugepairs
