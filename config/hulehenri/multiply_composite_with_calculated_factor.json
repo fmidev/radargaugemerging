@@ -1,0 +1,23 @@
+{
+    "coef": {
+	"zr_a": 223.0,
+	"zr_b": 1.53,
+	"zr_a_c": 223.0,
+	"zr_b_c": 1.43,
+	"zs_a": 115.0,
+	"zs_b": 1.35
+    },
+    "input_composite": {
+	"path": "/tutka/data/dev/cache/radar/fmippn/hulehenri/accrate_composites",
+	"filename": "{timestamp}_radar.rack.comp.accrate.005min_conf={config}.h5",
+	"dir_contains_date": false
+    },
+    "radargauge_file": {
+	"path": "/tutka/data/storage/radargaugemerging",
+	"filename": "mfb_state_{config}.dat"
+    },
+    "output_composite": {
+	"path": "/tutka/data/dev/cache/radar/fmippn/hulehenri/accrate_composites",
+	"filename": "{timestamp}_radar.rack.comp.accrate.005min.corrected_conf={config}.h5"
+    }
+}
