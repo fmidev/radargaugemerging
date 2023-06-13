@@ -8,8 +8,8 @@
 	"zs_b": 1.35
     },
     "input_composite": {
-	"path": "/tutka/data/dev/cache/radar/fmippn/hulehenri/accrate_composites",
-	"filename": "{timestamp}_radar.rack.comp.accrate.005min_conf={config}.h5",
+	"path": "/tutka/data/dev/cache/radar-composite/hulehenri_3067_500m/dbzh/andre",
+	"filename": "{timestamp}_hulehenri_3067_500m_dbzh_andre.h5",
 	"dir_contains_date": false
     },
     "radargauge_file": {
@@ -17,7 +17,7 @@
 	"filename": "mfb_state_{config}.dat"
     },
     "output_composite": {
-	"path": "/tutka/data/dev/cache/radar/fmippn/hulehenri/accrate_composites",
-	"filename": "{timestamp}_radar.rack.comp.accrate.005min.corrected_conf={config}.h5"
+	"path": "/tutka/data/dev/cache/radar/fmippn/hulehenri/corrected_composites",
+	"filename": "{timestamp}_hulehenri_3067_500m_dbzh_andre_gaugecorr.h5"
     }
 }
