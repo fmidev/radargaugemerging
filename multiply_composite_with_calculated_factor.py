@@ -200,6 +200,7 @@ def read_radargauge_factor(radargauge_factor_file):
     pickle_file = open(radargauge_factor_file,"rb")
     data = pickle.load(pickle_file)
     radargauge_factor = data["corr_factor"]
+    print("radargauge_factor: ", radargauge_factor)
 
     return radargauge_factor
     
