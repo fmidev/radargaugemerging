@@ -40,6 +40,7 @@ def run(date, infile, outfile, profile, prevstatefile=None):
     config.read(os.path.join("config", profile, "kalman_filter_mfb.cfg"))
     
     kalman_params = dict([(k, float(v)) for (k, v) in config["kalman_params"].items()])
+    run_params = dict([k for k in config["run_params"].items()])
 
     date = datetime.strptime(date, "%Y%m%d%H%M")
     
@@ -60,7 +61,7 @@ def run(date, infile, outfile, profile, prevstatefile=None):
         # ei lasketa Y:lle keskiarvoa vaan lasketaan Y jokaiselle sademittarille
         # erikseen ja tallennetaan dictionaryyn.
 
-        if config["run_params"]["constant_mfb_value"]:
+        if run_params["constant_mfb_value"]:
         
             Y = 0.0
             n = 0
@@ -76,6 +77,32 @@ def run(date, infile, outfile, profile, prevstatefile=None):
             else:
                 Y = None
     
+            print(f"Computed log-mean field bias = {Y} from observations at {str(date)}.")
+    
+            kalman_mfb.update(pred_state[0], pred_state[1], Y)
+    
+            print(f"Kalman state after update = ({kalman_mfb.beta:.3f}, {kalman_mfb.P:.3f}).")
+
+        else:
+
+            #Y = 0.0
+            Y = {}
+            n = 0
+            for ts in radar_gauge_pairs.keys():
+                if ts == date:
+                    for sid in radar_gauge_pairs[ts].keys():
+                        p = radar_gauge_pairs[ts][sid]
+                        #Y += np.log10(p[1] / p[0])
+                        Y[sid] = np.log10(p[1] / p[0])
+                        n += 1
+    
+            #if n > 0:
+            #    Y /= n
+            #else:
+            #    Y = None
+            if n = 0:
+                Y = None
+            
             print(f"Computed log-mean field bias = {Y} from observations at {str(date)}.")
     
             kalman_mfb.update(pred_state[0], pred_state[1], Y)
