@@ -35,70 +35,89 @@ import pyproj
 
 import exporters
 
-# parse command-line arguments
-argparser = argparse.ArgumentParser()
-argparser.add_argument("model", type=str, help="Kriging model file")
-argparser.add_argument("outtime", type=str, help="time stamp for output (YYYYmmddHHMM)")
-argparser.add_argument("outfile", type=str, help="output file (without extension)")
-argparser.add_argument("profile", type=str, help="configuration profile to use")
-args = argparser.parse_args()
 
-# read configuration file
-config = configparser.ConfigParser()
-config.read(
-    os.path.join("config", args.profile, "compute_kriged_correction_factors.cfg")
-)
+def run(model, outtime, outfile, profile):
 
-# read Kriging model
-model = pickle.load(open(args.model, "rb"))
-
-projection = config["grid"]["projection"]
-
-ll_lon = float(config["grid"]["ll_lon"])
-ll_lat = float(config["grid"]["ll_lat"])
-ur_lon = float(config["grid"]["ur_lon"])
-ur_lat = float(config["grid"]["ur_lat"])
-
-n_pixels_x = int(config["grid"]["n_pixels_x"])
-n_pixels_y = int(config["grid"]["n_pixels_y"])
-
-pr = pyproj.Proj(projection)
-ll_x, ll_y = pr(ll_lon, ll_lat)
-ur_x, ur_y = pr(ur_lon, ur_lat)
-
-x = np.linspace(ll_x, ur_x, n_pixels_x + 1)
-x += 0.5 * (x[1] - x[0])
-x = x[:-1]
-
-y = np.linspace(ll_y, ur_y, n_pixels_y + 1)
-y += 0.5 * (y[1] - y[0])
-y = y[:-1]
-
-ts = datetime.strptime(args.outtime, "%Y%m%d%H%M")
-z = np.ones((1,)) * ts.timestamp()
-
-zvalues, sigmasq = model.execute("grid", x, y, z)
-
-zvalues = zvalues[0, :]
-sigmasq = sigmasq[0, :]
-
-zvalues.set_fill_value(np.nan)
-sigmasq.set_fill_value(np.nan)
-
-if config["output"]["type"] == "geotiff":
-    pr = pyproj.Proj(config["grid"]["projection"])
-
-    ll_x, ll_y = pr(config["grid"]["ll_lon"], config["grid"]["ll_lat"])
-    ur_x, ur_y = pr(config["grid"]["ur_lon"], config["grid"]["ur_lat"])
-
-    bounds = [ll_x, ll_y, ur_x, ur_y]
-    out_rasters = np.stack([zvalues, sigmasq])
-    exporters.export_geotiff(
-        args.outfile, out_rasters, config["grid"]["projection"], bounds
+    # read configuration file
+    config = configparser.ConfigParser()
+    config.read(
+        os.path.join("config", args.profile, "compute_kriged_correction_factors.cfg")
     )
-elif config["output"]["type"] == "numpy":
-    np.savez_compressed(args.outfile, corr=zvalues.filled(), corr_var=sigmasq.filled())
-else:
-    raise ValueError(
-        f"Output format {config['output']['type']} not supported. The valid options are 'geotiff' and 'numpy'"
-    )
+
+    # read Kriging model
+    model = pickle.load(open(args.model, "rb"))
+
+    projection = config["grid"]["projection"]
+
+    ll_lon = float(config["grid"]["ll_lon"])
+    ll_lat = float(config["grid"]["ll_lat"])
+    ur_lon = float(config["grid"]["ur_lon"])
+    ur_lat = float(config["grid"]["ur_lat"])
+
+    n_pixels_x = int(config["grid"]["n_pixels_x"])
+    n_pixels_y = int(config["grid"]["n_pixels_y"])
+
+    pr = pyproj.Proj(projection)
+    ll_x, ll_y = pr(ll_lon, ll_lat)
+    ur_x, ur_y = pr(ur_lon, ur_lat)
+
+    x = np.linspace(ll_x, ur_x, n_pixels_x + 1)
+    x += 0.5 * (x[1] - x[0])
+    x = x[:-1]
+
+    y = np.linspace(ll_y, ur_y, n_pixels_y + 1)
+    y += 0.5 * (y[1] - y[0])
+    y = y[:-1]
+
+    ts = datetime.strptime(args.outtime, "%Y%m%d%H%M")
+    z = np.ones((1,)) * ts.timestamp()
+
+    zvalues, sigmasq = model.execute("grid", x, y, z)
+
+    zvalues = zvalues[0, :]
+    sigmasq = sigmasq[0, :]
+
+    zvalues.set_fill_value(np.nan)
+    sigmasq.set_fill_value(np.nan)
+
+    if config["output"]["type"] == "geotiff":
+        pr = pyproj.Proj(config["grid"]["projection"])
+
+        ll_x, ll_y = pr(config["grid"]["ll_lon"], config["grid"]["ll_lat"])
+        ur_x, ur_y = pr(config["grid"]["ur_lon"], config["grid"]["ur_lat"])
+
+        bounds = [ll_x, ll_y, ur_x, ur_y]
+        out_rasters = np.stack([zvalues, sigmasq])
+        exporters.export_geotiff(
+            args.outfile, out_rasters, config["grid"]["projection"], bounds
+        )
+    elif config["output"]["type"] == "numpy":
+        np.savez_compressed(args.outfile, corr=zvalues.filled(), corr_var=sigmasq.filled())
+    else:
+        raise ValueError(
+            f"Output format {config['output']['type']} not supported. The valid options are 'geotiff' and 'numpy'"
+        )
+
+def main():
+
+    run(args.model, args.outtime, args.outfile, args.profile)
+
+if __name__ == '__main__':
+
+    # parse command-line arguments
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument("model",
+                           type=str,
+                           help="Kriging model file")
+    argparser.add_argument("outtime",
+                           type=str,
+                           help="time stamp for output (YYYYmmddHHMM)")
+    argparser.add_argument("outfile",
+                           type=str,
+                           help="output file (without extension)")
+    argparser.add_argument("profile",
+                           type=str,
+                           help="configuration profile to use")
+    args = argparser.parse_args()
+
+    main()

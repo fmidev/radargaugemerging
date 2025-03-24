@@ -55,11 +55,6 @@ def run(date, infile, outfile, profile, prevstatefile=None):
             prev_state = pickle.load(f)
             kalman_mfb = prev_state["kalman_mfb"]
             pred_state = prev_state["pred_state"]
-    
-        # compute MFB from the previous state
-        # TODO: Tahan mukaan toinen versio loopista, jossa
-        # ei lasketa Y:lle keskiarvoa vaan lasketaan Y jokaiselle sademittarille
-        # erikseen ja tallennetaan dictionaryyn.
 
         if run_params["constant_mfb_value"]:
         
