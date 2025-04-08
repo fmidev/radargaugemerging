@@ -1,6 +1,6 @@
 import collect_radar_gauge_pairs
 import fit_kriging_model
-import compute_kriged_correction_factor
+import compute_kriged_correction_factors
 import argparse
 import datetime
 from pathlib import Path
