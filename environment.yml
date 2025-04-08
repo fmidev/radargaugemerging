@@ -8,6 +8,7 @@ dependencies:
   - h5py
   - matplotlib
   - numpy
+  - import yaml
   - pillow
   - pip
   - pykrige
