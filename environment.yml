@@ -6,9 +6,13 @@ dependencies:
   - python
   - git
   - h5py
+  - netCDF4
+  - xarray
   - matplotlib
   - numpy
-  - import yaml
+  - yaml
+  - gzip
+  - json
   - pillow
   - pip
   - pykrige
