@@ -18,7 +18,6 @@ Configuration files (in the config/<profile> directory)
 - fit_kriging_model.cfg
 """
 
-import argparse
 import configparser
 import os
 import pickle
@@ -31,9 +30,9 @@ def run(rgpairfile, outfile, profile):
 
     # read configuration file
     config = configparser.ConfigParser()
-    config.read(os.path.join("config", args.profile, "fit_kriging_model.cfg"))
+    config.read(os.path.join("config", profile, "fit_kriging_model.cfg"))
 
-    radar_gauge_pairs = pickle.load(open(args.rgpairfile, "rb"))
+    radar_gauge_pairs = pickle.load(open(rgpairfile, "rb"))
 
     # collect radar-gauge pairs for fitting the model
     x = []
@@ -68,27 +67,7 @@ def run(rgpairfile, outfile, profile):
         verbose=True,
     )
 
-    pickle.dump(model, open(args.outfile, "wb"))
+    pickle.dump(model, open(outfile, "wb"))
 
 
-def main():
-    
-    run(args.rgpair, args.outfile, args.profile)  
 
-
-if __name__ == '__main__':
-
-    # parse command-line arguments
-    argparser = argparse.ArgumentParser()
-    argparser.add_argument("rgpairfile",
-                           type=str,
-                           help="radar-gauge pair file")
-    argparser.add_argument("outfile",
-                           type=str,
-                           help="output file")
-    argparser.add_argument("profile",
-                           type=str,
-                           help="configuration profile to use")
-    args = argparser.parse_args()
-    
-    main()         

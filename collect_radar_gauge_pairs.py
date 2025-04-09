@@ -26,7 +26,6 @@ Configuration files (in the config/<profile> directory)
 - radar_locations.yaml
 """
 
-import argparse
 from collections import defaultdict
 import configparser
 from datetime import datetime, timedelta
@@ -233,30 +232,4 @@ def _compute_nearest_distance(gauge_lonlat):
     pass
 
 
-
-def main():
-
-    run(args.startdate, args.enddate, args.outfile, args.profile)
-
-    
-
-if __name__ == '__main__':
-
-    # parse command-line arguments
-    argparser = argparse.ArgumentParser()
-    argparser.add_argument("startdate",
-                           type=str,
-                           help="start date (YYYYMMDDHHMM)")
-    argparser.add_argument("enddate",
-                           type=str,
-                           help="end date (YYYYMMDDHHMM)")
-    argparser.add_argument("outfile",
-                           type=str,
-                           help="output file")
-    argparser.add_argument("profile",
-                           type=str,
-                           help="configuration profile to use")
-    args = argparser.parse_args()
-
-    main()
 
