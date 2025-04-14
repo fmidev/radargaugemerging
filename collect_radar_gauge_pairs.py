@@ -176,6 +176,8 @@ def run(startdate, enddate, outfile, profile):
             print(
                 f"  Skipping {radar_ts}: not enough previous files found for computing accumulated radar rainfall."
             )
+        elif num_found == 0:
+            print(f"  No radar composites found between {prev_radar_ts} - {radar_ts}.")
         else:
             print(
                 f"  Computed radar accumulation between {prev_radar_ts} - {radar_ts} from {num_found} time stamps."
