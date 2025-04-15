@@ -20,7 +20,7 @@ def main():
 
     # Fit kriging model
     kriging_model_file = f"{args.outpath}/kriging_model_{args.config}_{timestamp}.pkl"
-    fit_kriging_model.run(radargauge_file, kriging_outfile, args.config)
+    fit_kriging_model.run(radargauge_file, kriging_model_file, args.config)
 
     # Compute kriged correction factor
     correction_factor_file = f"{args.outpath}/radargauge_corrfactor_{args.config}_{timestamp}.tif"
