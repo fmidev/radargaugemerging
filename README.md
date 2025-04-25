@@ -5,14 +5,18 @@ Python package for statistical merging of radar and gauge precipitation measurem
 
 The following scripts/modules have been implemented and tested:
 
-| File                            | Description                                                               |
-|---------------------------------|---------------------------------------------------------------------------|
-| collect_radar_gauge_pairs.py    | script for collecting co-located radar-gauge pairs                        |
-| importers.py                    | reading radar composites                                                  |
-| iterate_kalman_mfb.py           | iterative running of Kalman filter-based mean field bias (MFB) estimation |
-| kalman_mfb.py                   | Kalman filter-based model for mean field bias                             |
-| radar_archive.py                | browsing of radar archives                                                |
-| regression.py                   | multivariate polynomial regression                                        |
+| File                                 | Description                                                               |
+|--------------------------------------|---------------------------------------------------------------------------|
+| collect_radar_gauge_pairs.py         | collect co-located radar-gauge pairs                                      |
+| compute_kriged_correction_factors.py | compute Kriging-interpolated radar correction factors                     |
+| exporters.py                         | methods for writing output files                                          |
+| fit_kriging_model.py                 | fit Kriging model to radar-gauge observation pairs                        |
+| importers.py                         | reading radar composites                                                  |
+| iterate_kalman_mfb.py                | iterative running of Kalman filter-based mean field bias (MFB) estimation |
+| kalman_mfb.py                        | Kalman filter-based model for mean field bias                             |
+| radar_archive.py                     | browsing of radar archives                                                |
+| regression.py                        | multivariate polynomial regression                                        |
+| util.py                              | miscellaneous utility methods                                             |
 
 ## Examples
 
@@ -41,3 +45,19 @@ The logarithmic MFB estimate
 $$\displaystyle\beta_t=\frac{1}{n}\sum_{i=1}^n\log_{10}\left(\frac{G_{i,t}}{R_{i,t}}\right)$$
 
 is stored in the dictionary contained in the above state file. The dictionary has the key "corr_factor", whose value can be multiplied with radar-measured rain rates/accumulations to obtain the corrected values.
+
+### Compute Kriging-interpolated correction factors
+
+As above, we collect the gauge-radar pairs by running collect_gauge_radar_pairs.py to file `radargaugepairs_202406.dat`:
+
+    python collect_radar_gauge_pairs.py 202406010000 202407010000 radargaugepairs_202406.dat config
+
+Then we fit Kriging model to the radar-gauge pairs and write to file `kriging_model.dat` by running
+
+    python fit_kriging_model.py radargaugepairs_202406.dat kriging_model.dat test
+
+Gridded correction factors are then computed and written to file `kriged_correction_factors_202407010000.tif` by running
+
+    python compute_kriged_correction_factors.py kriging_model.dat 202407010000 kriged_correction_factors_202407010000 config
+
+Note that the chosed time stamp should be within the same interval as the gauge-radar pairs used for model fitting (or at its endpoint). Kriging will give poor results if used for extrapolation.
