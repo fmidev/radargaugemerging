@@ -23,8 +23,8 @@ def main():
     fit_kriging_model.run(radargauge_file, kriging_model_file, args.config)
 
     # Compute kriged correction factor
-    correction_factor_file = f"{args.outpath}/radargauge_corrfactor_{args.config}_{timestamp}.tif"
-    compute_kriged_correction_factors.run(kriging_model_file, timestamp, correction_factor_file, args.config)
+    correction_factor_file_without_extension = f"{args.outpath}/radargauge_corrfactor_{args.config}_{timestamp}"
+    compute_kriged_correction_factors.run(kriging_model_file, timestamp, correction_factor_file_without_extension, args.config)
     
 
 if __name__ == '__main__':
