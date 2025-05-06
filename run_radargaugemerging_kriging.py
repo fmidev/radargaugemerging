@@ -4,6 +4,9 @@ import compute_kriged_correction_factors
 import argparse
 import datetime
 from pathlib import Path
+import json
+
+import util
 
 
 def main():
@@ -22,9 +25,17 @@ def main():
     kriging_model_file = f"{args.outpath}/kriging_model_{args.config}_{timestamp}.pkl"
     fit_kriging_model.run(radargauge_file, kriging_model_file, args.config)
 
+    # Read snowprob observations to take into account when writing the output geotiff
+    run_conf = f"{args.config}/run_config.json"
+    with open(run_conf, "r") as jsonfile:
+        data = json.load(jsonfile)
+    snowprob_conf = data["snowprob"]
+    snowprob_array = read_snowprob(timestamp_formatted, snowprob_conf)
+    print("snowprob_array: ", snowprob_array)
+    
     # Compute kriged correction factor
     correction_factor_file_without_extension = f"{args.outpath}/radargauge_corrfactor_{args.config}_{timestamp}"
-    compute_kriged_correction_factors.run(kriging_model_file, timestamp, correction_factor_file_without_extension, args.config)
+    compute_kriged_correction_factors.run(kriging_model_file, timestamp, correction_factor_file_without_extension, args.config, snowprob_array)
     
 
 if __name__ == '__main__':

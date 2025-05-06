@@ -153,3 +153,57 @@ def read_radar_locations(config):
         out[radar] = tuple([float(v) for v in config[radar].split(",")])
 
     return out
+
+
+def read_snowprob(curdate, snowprob_conf):
+    """Read probability of snow data.              
+    Allows searching some timesteps bawckwards, if file does not exist for                   
+    the current timestep. The allowed time difference should be defined
+    as minutes with the key "allow_timediff" in the snowprob_conf;
+    otherwise 5 minutes is used.
+ 
+    Parameters                                                        
+    ----------                                          
+    curdate : datetime                                          
+        The current time.                                  
+    snowprob_conf : dict                               
+        The configuration for the snow probability data. Should include keys
+        "dir", "filename", "timeres", "allow_timediff".
+                                             
+    Returns 
+    -------                                                        
+    np.ndarray                                             
+        The snow probability data.
+
+    """
+    
+    path = Path(snowprob_conf["dir"])                           
+    curfile = path / snowprob_conf["filename"].format(timestamp=curdate.strftime("%Y%m%d%H%M"))
+    allowed_timediff = snowprob_conf.get("allow_timediff", 5) * 60
+    
+    prev_time = curdate
+    while not curfile.exists():
+        # Find the previous file
+        timediff = curdate - prev_time
+        if timediff.total_seconds() > allowed_timediff:
+            raise FileNotFoundError(
+                f"Could not find snow probability file for {curdate} or older, tried up to {prev_time}"
+            )
+        prev_time = prev_time - timedelta(minutes=snowprob_conf["timeres"])
+        curfile = path / snowprob_conf["filename"].format(timestamp=prev_time.strftime("%Y%m%d%H%M"))
+        
+    (
+        snowprob,
+        snowprob_quantity,
+        snowprob_timestamp,
+        snowprob_gain,
+        snowprob_offset,
+        snowprob_nodata,
+        snowprob_undetect,
+    ) = read_hdf5(curfile, qty="SNOWPROB")
+    
+    snowprob = snowprob.astype(np.float32)
+    snowprob[snowprob == snowprob_nodata] = np.nan
+    snowprob[snowprob == snowprob_undetect] = 0
+    
+    return snowprob

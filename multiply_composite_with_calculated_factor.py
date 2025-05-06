@@ -9,6 +9,7 @@ import sys
 import argparse
 import datetime
 import pickle
+from osgeo import gdal
 
 
 def read_config(config_file):
@@ -203,6 +204,23 @@ def read_radargauge_factor(radargauge_factor_file):
     print("radargauge_factor: ", radargauge_factor)
 
     return radargauge_factor
+
+
+def read_radargauge_factor_array(radargauge_factor_array_file):
+    """ Read radargauge factor array from file
+
+    Keyword arguments:
+    radargauge_factor_array_file -- geotiff containing factor array
+
+    Return:
+    radargauge_factor_array -- radargauge factor array
+
+    """
+    
+    ds = gdal.Open(radargauge_factor_array_file)
+    radargauge_factor_array = np.array(ds.GetRasterBand(1).ReadAsArray())
+
+    return radargauge_factor_array
     
 
 def overwrite_dataset_hdf5(infile, outfile, datapath, new_dataset):

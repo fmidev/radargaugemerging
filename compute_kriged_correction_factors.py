@@ -43,13 +43,15 @@ import exporters
 import util
 
 
-def run(model, outtime, outfile, profile):
+def run(model, outtime, outfile, profile, snowprob, snow_threshold=20):
     """
     Input arguments
     model -- Kriging model file
     outtime -- time stamp for output (YYYYmmddHHMM)
     outfile -- output file (without extension)
     profile -- configuration profile to use
+    snowprob -- probability of snow (0 - 100 %), numpy array
+    snow_threshold -- snow threshold for masking out snowy pixels
     """
 
     # read configuration file
@@ -132,6 +134,10 @@ def run(model, outtime, outfile, profile):
         )
         zvalues = model.predict(p, xp).reshape((n_y, n_x))
         sigmasq = np.zeros(zvalues.shape)
+
+    if config["snowprob"]["use_snowprob_obs"]:
+        zvalues[snowprob > snow_threshold] == np.nan
+        sigmasq[snowprob > snow_threshold] == np.nan
 
     if config["output"]["type"] == "geotiff":
         pr = pyproj.Proj(config["grid"]["projection"])
