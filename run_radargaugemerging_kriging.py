@@ -19,24 +19,29 @@ def main():
             
     # Collect the gauge-radar pair file
     radargauge_file = f"{args.outpath}/radargaugepairs_{args.config}_{timestamp}.dat"
-    collect_radar_gauge_pairs.run(earlier_timestamp, timestamp, radargauge_file, args.config)
+    n_radargaugepairs = collect_radar_gauge_pairs.run(earlier_timestamp, timestamp, radargauge_file, args.config)
 
-    # Fit kriging model
-    kriging_model_file = f"{args.outpath}/kriging_model_{args.config}_{timestamp}.pkl"
-    fit_kriging_model.run(radargauge_file, kriging_model_file, args.config)
+    if n_radargaugepairs > 0:
+    
+        # Fit kriging model
+        kriging_model_file = f"{args.outpath}/kriging_model_{args.config}_{timestamp}.pkl"
+        fit_kriging_model.run(radargauge_file, kriging_model_file, args.config)
 
-    # Read snowprob observations to take into account when writing the output geotiff
-    run_conf = f"{args.config}/run_config.json"
-    with open(run_conf, "r") as jsonfile:
-        data = json.load(jsonfile)
-    snowprob_conf = data["snowprob"]
-    snowprob_array = read_snowprob(timestamp_formatted, snowprob_conf)
-    print("snowprob_array: ", snowprob_array)
+        # Read snowprob observations to take into account when writing the output geotiff
+        run_conf = f"{args.config}/run_config.json"
+        with open(run_conf, "r") as jsonfile:
+            data = json.load(jsonfile)
+        snowprob_conf = data["snowprob"]
+        snowprob_array = read_snowprob(timestamp_formatted, snowprob_conf)
+        print("snowprob_array: ", snowprob_array)
     
-    # Compute kriged correction factor
-    correction_factor_file_without_extension = f"{args.outpath}/radargauge_corrfactor_{args.config}_{timestamp}"
-    compute_kriged_correction_factors.run(kriging_model_file, timestamp, correction_factor_file_without_extension, args.config, snowprob_array)
-    
+        # Compute kriged correction factor
+        correction_factor_file_without_extension = f"{args.outpath}/radargauge_corrfactor_{args.config}_{timestamp}"
+        compute_kriged_correction_factors.run(kriging_model_file, timestamp, correction_factor_file_without_extension, args.config, snowprob_array)
+
+    else:
+
+        print("No radar-gauge pairs found, not calculating correction factor for timestamp ", timestamp, ".")
 
 if __name__ == '__main__':
 

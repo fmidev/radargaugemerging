@@ -259,3 +259,5 @@ def run(startdate, enddate, outfile, profile):
     print(f"Wrote output to {outfile}.")
 
     pickle.dump(radar_gauge_pairs, open(outfile, "wb"))
+
+    return n
