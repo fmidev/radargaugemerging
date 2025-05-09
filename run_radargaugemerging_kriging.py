@@ -21,14 +21,14 @@ def main():
     radargauge_file = f"{args.outpath}/radargaugepairs_{args.config}_{timestamp}.dat"
     n_radargaugepairs = collect_radar_gauge_pairs.run(earlier_timestamp, timestamp, radargauge_file, args.config)
 
-    if n_radargaugepairs > 0:
+    if n_radargaugepairs > 1:
     
         # Fit kriging model
         kriging_model_file = f"{args.outpath}/kriging_model_{args.config}_{timestamp}.pkl"
         fit_kriging_model.run(radargauge_file, kriging_model_file, args.config)
 
         # Read snowprob observations to take into account when writing the output geotiff
-        run_conf = f"{args.config}/run_config.json"
+        run_conf = f"/config/{args.config}/run_config.json"
         with open(run_conf, "r") as jsonfile:
             data = json.load(jsonfile)
         snowprob_conf = data["snowprob"]
@@ -41,7 +41,7 @@ def main():
 
     else:
 
-        print("No radar-gauge pairs found, not calculating correction factor for timestamp ", timestamp, ".")
+        print(f"Too few ({n_radargaugepairs}) radar-gauge pairs found, not calculating correction factor for timestamp {timestamp}.")
 
 if __name__ == '__main__':
 
