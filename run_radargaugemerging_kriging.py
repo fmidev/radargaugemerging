@@ -32,7 +32,7 @@ def main():
         with open(run_conf, "r") as jsonfile:
             data = json.load(jsonfile)
         snowprob_conf = data["snowprob"]
-        snowprob_array = read_snowprob(timestamp_formatted, snowprob_conf)
+        snowprob_array = util.read_snowprob(timestamp_formatted, snowprob_conf)
         print("snowprob_array: ", snowprob_array)
     
         # Compute kriged correction factor
