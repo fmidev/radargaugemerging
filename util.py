@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 import requests
 
 import numpy as np
+from pathlib import Path
+import hiisi
 
 
 def compute_distance_to_nearest_radar(gauge_loc, radar_locs):
@@ -207,3 +209,59 @@ def read_snowprob(curdate, snowprob_conf):
     snowprob[snowprob == snowprob_undetect] = 0
     
     return snowprob
+
+
+def read_hdf5(image_h5_file, qty="DBZH"):
+    """Read image array from ODIM hdf5 file.
+
+    Keyword arguments:
+    image_h5_file -- ODIM hdf5 file
+    qty -- array quantity that is read                                                                                                                  
+
+    Return:
+    image_array -- numpy array containing DBZH or RATE array
+    quantity -- array quantity
+    timestamp -- timestamp of image_array
+    mask_nodata -- masked array where image_array has nodata value
+    gain -- gain of image_array
+    offset -- offset of image_array
+    """
+    
+    # Read RATE or DBZH from hdf5 file
+    logging.info(f"Extracting data from {image_h5_file} file")
+    comp = hiisi.OdimCOMP(image_h5_file, "r")
+    test = comp.select_dataset(qty)
+
+    if test is not None:
+        image_array = comp.dataset
+        quantity = qty
+    else:        
+        logging.error(f"{qty} array not found in the file {image_h5_file}!")
+        raise ValueError(f"{qty} array not found in the file {image_h5_file}!")
+
+    # Read nodata and undetect values from metadata for masking
+    gen = comp.attr_gen("nodata")
+    pair = gen.__next__()
+    nodata = pair.value
+    gen = comp.attr_gen("undetect")
+    pair = gen.__next__()
+    undetect = pair.value
+
+    # Read gain and offset values from metadata
+    gen = comp.attr_gen("gain")
+    pair = gen.__next__()
+    gain = pair.value
+    gen = comp.attr_gen("offset")
+    pair = gen.__next__()
+    offset = pair.value
+
+    # Read timestamp from metadata
+    gen = comp.attr_gen("date")
+    pair = gen.__next__()
+    date = pair.value
+    gen = comp.attr_gen("time")
+    pair = gen.__next__()
+    time = pair.value
+    timestamp = date + time
+
+    return image_array, quantity, timestamp, gain, offset, int(nodata), int(undetect)

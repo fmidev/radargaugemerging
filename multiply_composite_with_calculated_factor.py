@@ -279,9 +279,11 @@ def run(timestamp, config):
     
     # Multiply rain values with radargauge factor
     radargauge_factor_file = f"{radargauge_conf['path']}/{radargauge_conf['filename'].format(config=config)}"
-    radargauge_factor = read_radargauge_factor(radargauge_factor_file)
-    image_array_rate = image_array_rate * radargauge_factor
-
+    #radargauge_factor = read_radargauge_factor(radargauge_factor_file)
+    radargauge_factor = read_radargauge_factor_array(radargauge_factor_file)
+    #image_array_rate = image_array_rate * radargauge_factor
+    image_array_rate = image_array_rate * 10 ** radargauge_factor_array
+    
     # Convert image arrays back to dBZ
     image_array_dbz = RRtodBZ(image_array_rate, coef)
 
