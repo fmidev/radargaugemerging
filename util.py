@@ -228,15 +228,13 @@ def read_hdf5(image_h5_file, qty="DBZH"):
     """
     
     # Read RATE or DBZH from hdf5 file
-    logging.info(f"Extracting data from {image_h5_file} file")
     comp = hiisi.OdimCOMP(image_h5_file, "r")
     test = comp.select_dataset(qty)
 
     if test is not None:
         image_array = comp.dataset
         quantity = qty
-    else:        
-        logging.error(f"{qty} array not found in the file {image_h5_file}!")
+    else:
         raise ValueError(f"{qty} array not found in the file {image_h5_file}!")
 
     # Read nodata and undetect values from metadata for masking
