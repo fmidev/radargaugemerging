@@ -138,8 +138,8 @@ def run(model, outtime, outfile, profile, snowprob, snow_threshold=20):
     if config["snowprob"]["use_snowprob_obs"]:
         
         mask = (snowprob > snow_threshold) & (~np.isnan(snowprob))
-        zvalues[mask] = np.nan
-        sigmasq[mask] = np.nan
+        zvalues[mask] = -99999.0
+        sigmasq[mask] = -99999.0
 
     if config["output"]["type"] == "geotiff":
         pr = pyproj.Proj(config["grid"]["projection"])
