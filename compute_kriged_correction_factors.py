@@ -152,7 +152,7 @@ def run(model, outtime, outfile, profile, snowprob, snow_threshold=20):
         fn = outfile + ".tif"
         exporters.export_geotiff(fn, out_rasters, config["grid"]["projection"], bounds)
     elif config["output"]["type"] == "numpy":
-        np.savez_compressed(outfile, corr=zvalues.filled(), corr_var=sigmasq.filled())
+        np.savez_compressed(outfile, corr=zvalues, corr_var=sigmasq)
     else:
         raise ValueError(
             f"Output format {config['output']['type']} not supported. The valid options are 'geotiff' and 'numpy'"
