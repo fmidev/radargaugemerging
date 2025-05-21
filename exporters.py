@@ -46,6 +46,6 @@ def export_geotiff(filename, rasters, projection, bounds):
     for i in range(rasters.shape[0]):
         band = dst.GetRasterBand(i + 1)
         band.WriteArray(rasters[i])
-        band.SetNoDataValue(-99999.0)
+        band.SetNoDataValue(0.0)
 
     dst.FlushCache()
