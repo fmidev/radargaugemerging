@@ -88,8 +88,6 @@ def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=
     pr = pyproj.Proj(projection)
     ll_x, ll_y = pr(ll_lon, ll_lat)
     ur_x, ur_y = pr(ur_lon, ur_lat)
-    print("projected ll_x, ll_y: ", ll_x, ll_y)
-    print("projected ur_x, ur_y: ", ur_x, ur_y)
     
     grid_x = np.linspace(ll_x, ur_x, n_pixels_x + 1)
     grid_x += 0.5 * (grid_x[1] - grid_x[0])
@@ -127,8 +125,6 @@ def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=
             int(config["grid"]["n_pixels_y"]),
             radar_xy,
         )
-
-        print("dist_grid: ", dist_grid)
         
         p = dist_grid.flatten()[:, np.newaxis]
         n_x = len(grid_x)
@@ -139,9 +135,6 @@ def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=
         )
         zvalues = model.predict(p, xp).reshape((n_y, n_x))
         sigmasq = np.zeros(zvalues.shape)
-
-        print("zvalues before snowprob filtering: ", zvalues)
-        print("sigmasq values before snowprob filtering: ", sigmasq)
 
         # Mask out nodata values
         zvalues[nodata_mask] = 0.0
@@ -154,9 +147,8 @@ def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=
         zvalues[mask] = 0.0
         sigmasq[mask] = 0.0
 
-        print("zvalues after snowprob filtering: ", zvalues)
-        print("sigmasq values after snowprob filtering: ", sigmasq)
-
+    print("zvalues min, max: ", np.nanmin(zvalues), np.nanmax(zvalues))
+        
     if config["output"]["type"] == "geotiff":
         pr = pyproj.Proj(config["grid"]["projection"])
 
