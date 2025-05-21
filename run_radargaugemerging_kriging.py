@@ -19,7 +19,7 @@ def main():
             
     # Collect the gauge-radar pair file
     radargauge_file = f"{args.outpath}/radargaugepairs_{args.config}_{timestamp}.dat"
-    n_radargaugepairs = collect_radar_gauge_pairs.run(earlier_timestamp, timestamp, radargauge_file, args.config)
+    n_radargaugepairs, nodata_mask = collect_radar_gauge_pairs.run(earlier_timestamp, timestamp, radargauge_file, args.config)
 
     if n_radargaugepairs > 1:
     
@@ -37,7 +37,7 @@ def main():
     
         # Compute kriged correction factor
         correction_factor_file_without_extension = f"{args.outpath}/radargauge_corrfactor_{args.config}_{timestamp}"
-        compute_kriged_correction_factors.run(kriging_model_file, timestamp, correction_factor_file_without_extension, args.config, snowprob_array)
+        compute_kriged_correction_factors.run(kriging_model_file, timestamp, correction_factor_file_without_extension, args.config, nodata_mask, snowprob_array)
 
     else:
 

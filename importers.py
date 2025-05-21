@@ -226,7 +226,7 @@ def import_opera_odim_hdf5(filename, quantity="DBZH", **kwargs):
     if not data_found:
         raise KeyError(f"no composite for quantity '{quantity}' found from {filename}")
     else:
-        return radar_composite, metadata
+        return radar_composite, metadata, nodata_mask
 
     
 def import_fmi_odim_hdf5(filename, quantity="ACRR", **kwargs):
@@ -331,7 +331,7 @@ def import_fmi_odim_hdf5(filename, quantity="ACRR", **kwargs):
     if not data_found:
         raise KeyError(f"no composite for quantity '{quantity}' found from {filename}")
     else:
-        return radar_composite, metadata
+        return radar_composite, metadata, nodata_mask
 
 
 def _import_fmi_pgm_geodata(metadata):

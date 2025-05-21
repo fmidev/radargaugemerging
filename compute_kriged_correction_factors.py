@@ -43,13 +43,14 @@ import exporters
 import util
 
 
-def run(model, outtime, outfile, profile, snowprob, snow_threshold=20):
+def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=20):
     """
     Input arguments
     model -- Kriging model file
     outtime -- time stamp for output (YYYYmmddHHMM)
     outfile -- output file (without extension)
     profile -- configuration profile to use
+    nodata_mask -- nodata mask
     snowprob -- probability of snow (0 - 100 %), numpy array
     snow_threshold -- snow threshold for masking out snowy pixels
     """
@@ -141,8 +142,12 @@ def run(model, outtime, outfile, profile, snowprob, snow_threshold=20):
 
         print("zvalues before snowprob filtering: ", zvalues)
         print("sigmasq values before snowprob filtering: ", sigmasq)
-        
 
+        # Mask out nodata values
+        zvalues[nodata_mask] = 0.0
+        sigmasq[nodata_mask] = 0.0
+
+        
     if config["snowprob"]["use_snowprob_obs"]:
         
         mask = (snowprob > snow_threshold) & (~np.isnan(snowprob))
