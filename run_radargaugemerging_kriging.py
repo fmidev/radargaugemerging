@@ -10,11 +10,17 @@ import util
 
 
 def main():
+
+    # Read run config
+    run_conf_file = f"/config/{args.config}/run_config.json"
+        with open(run_conf_file, "r") as jsonfile:
+            run_conf = json.load(jsonfile)
     
     # Calculate previous timestamp (3 - 6 hours before the given timestamp)
     timestamp = args.timestamp
     timestamp_formatted = datetime.datetime.strptime(timestamp, "%Y%m%d%H%M")
-    rg_pairs_timeperiod_mins = 3*60
+    rg_pairs_timeperiod = run_conf["run_options"]["rg_pairs_timeperiod"]
+    rg_pairs_timeperiod_mins = rg_pairs_timeperiod*60
     earlier_timestamp = ( timestamp_formatted - datetime.timedelta(minutes=rg_pairs_timeperiod_mins) ).strftime("%Y%m%d%H%M")
             
     # Collect the gauge-radar pair file
@@ -28,10 +34,7 @@ def main():
         fit_kriging_model.run(radargauge_file, kriging_model_file, args.config)
 
         # Read snowprob observations to take into account when writing the output geotiff
-        run_conf = f"/config/{args.config}/run_config.json"
-        with open(run_conf, "r") as jsonfile:
-            data = json.load(jsonfile)
-        snowprob_conf = data["snowprob"]
+        snowprob_conf = run_conf["snowprob"]
         snowprob_array = util.read_snowprob(timestamp_formatted, snowprob_conf)
         print("snowprob_array: ", snowprob_array)
     
