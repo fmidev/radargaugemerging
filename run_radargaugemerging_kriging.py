@@ -13,8 +13,8 @@ def main():
 
     # Read run config
     run_conf_file = f"/config/{args.config}/run_config.json"
-        with open(run_conf_file, "r") as jsonfile:
-            run_conf = json.load(jsonfile)
+    with open(run_conf_file, "r") as jsonfile:
+        run_conf = json.load(jsonfile)
     
     # Calculate previous timestamp (3 - 6 hours before the given timestamp)
     timestamp = args.timestamp
