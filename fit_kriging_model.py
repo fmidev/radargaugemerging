@@ -73,6 +73,11 @@ def run(rgpairfile, outfile, profile):
             z.append(timestamp.timestamp())
             val.append(np.log10(p[1] / p[0]))
 
+    if len(val) < int(config["kriging"]["min_valid_points"]):
+    raise Exception(
+        f"{len(val)} radar-gauge pairs found but {config['kriging']['min_valid_points']} required"
+    )
+
     if config["kriging"]["time_scaling_factor"] == "auto":
         # a heuristic value to relate the standard deviations of the
         # spatial coordinates and timestamps to each other
@@ -83,6 +88,19 @@ def run(rgpairfile, outfile, profile):
     n_closest_points = int(config["kriging"]["n_closest_points"])
     if n_closest_points == 0:
         n_closest_points = None
+
+    val = np.array(val)
+    mask = np.logical_and(
+        val >= float(config["kriging"]["min_corr_factor"]),
+        val <= float(config["kriging"]["max_corr_factor"]),
+    )
+
+    print(f"Number of valid / all radar-gauge pairs: {np.sum(mask)} / {len(x)}")
+
+    x = np.array(x)[mask]
+    y = np.array(y)[mask]
+    z = np.array(z)[mask]
+    val = val[mask]
 
     if config["kriging"]["method"] == "ordinary":
         model = OrdinaryKriging3D(
@@ -105,6 +123,8 @@ def run(rgpairfile, outfile, profile):
         for timestamp in radar_gauge_pairs.keys():
             for fmisid in radar_gauge_pairs[timestamp].keys():
                 dists.append(radar_gauge_pairs[timestamp][fmisid][2]["distance_to_radar"])
+
+        dists = np.array(dists)[mask]
 
         regression_model = LinearRegression()
         model = RegressionKriging(
