@@ -28,12 +28,11 @@ def read_config(config_file):
     with open(config_file, "r") as jsonfile:
         data = json.load(jsonfile)
 
-    coef = data["coef"]
     input_conf = data["input_composite"]
     radargauge_conf = data["radargauge_file"]
     output_conf = data["output_composite"]
 
-    return coef, input_conf, radargauge_conf, output_conf
+    return input_conf, radargauge_conf, output_conf
 
 
 def read_hdf5(image_h5_file):
@@ -147,47 +146,6 @@ def convert_dtype(image_array, nodata_mask, undetect_mask, nodata, undetect, gai
     return scaled_image_new_dtype
 
 
-def dBZtoRR(dbz, coef):                                                                           
-    """Convert dBZ to rain rate using simple formula.
-     
-    Keyword arguments:
-    dbz -- Array of dBZ values
-    coef -- dictionary containing Z(R) A and B coefficients                                                                                                                  
-
-    Return:
-    rr -- rain rate
-    """
-
-    zr_a = coef["zr_a"]
-    zr_b = coef["zr_b"]
-    
-    # Convert dBZ to rain rate RR
-    rr = np.power(10**(dbz/10) / zr_a, 1/zr_b)
-    
-    return rr
-
-
-def RRtodBZ(rr, coef):
-    """Convert rain rate to dBZ using simple formula.
-
-    Keyword arguments:
-    rr -- rain rate
-    coef -- dictionary containing Z(R) A and B coefficients zr_a, zr_b
-
-    Return:
-    dbz -- Array of dBZ values
-
-    """
-    
-    zr_a = coef["zr_a"]
-    zr_b = coef["zr_b"]
-
-    # Convert RR to dBZ
-    dbz = 10 * np.log10(zr_a * np.power(rr, zr_b))
-    
-    return dbz       
-
-
 def read_radargauge_factor(radargauge_factor_file):
     """ Read radargauge factor from file
 
@@ -251,7 +209,7 @@ def overwrite_dataset_hdf5(infile, outfile, datapath, new_dataset):
 def run(timestamp, config):
 
     config_file = f"/config/{config}/multiply_composite_with_calculated_factor.json"
-    coef, input_conf, radargauge_conf, output_conf = read_config(config_file)
+    input_conf, radargauge_conf, output_conf = read_config(config_file)
 
     # Current timestamp in datetime
     formatted_timestamp = datetime.datetime.strptime(timestamp, "%Y%m%d%H%M")
@@ -274,19 +232,11 @@ def run(timestamp, config):
     # Convert to physical values
     image_array_phys = image_array * gain + offset
     
-    # Convert image arrays dBZ -> rate
-    image_array_rate = dBZtoRR(image_array_phys, coef)
-    
     # Multiply rain values with radargauge factor
     radargauge_factor_file = f"{radargauge_conf['path']}/{radargauge_conf['filename'].format(config=config)}"
-    #radargauge_factor = read_radargauge_factor(radargauge_factor_file)
-    radargauge_factor = read_radargauge_factor_array(radargauge_factor_file)
-    #image_array_rate = image_array_rate * radargauge_factor
-    image_array_rate = image_array_rate * 10 ** radargauge_factor_array
+    radargauge_factor_array = read_radargauge_factor_array(radargauge_factor_file)
+    image_array_corr_rate = image_array_rate * 10 ** radargauge_factor_array
     
-    # Convert image arrays back to dBZ
-    image_array_dbz = RRtodBZ(image_array_rate, coef)
-
     # Convert back to 16bit (or 8bit) unsigned integer values
     image_array_dbz = convert_dtype(image_array_dbz, nodata_mask, undetect_mask, nodata, undetect, gain, offset)
     
@@ -309,7 +259,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--config", type=str,
-        default="ravake_composite",
+        default="finradfast",
         help="Config file to use."
     )
 

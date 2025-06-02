@@ -141,8 +141,8 @@ def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=
         sigmasq[nodata_mask] = 0.0
 
         # Mask out too little or too big values
-        zvalues[zvalues < -1] = 0.0
-        zvalues[zvalues > 1] = 0.0
+        zvalues[zvalues < -0.3] = 0.0
+        zvalues[zvalues > 0.3] = 0.0
 
         
     if config["snowprob"]["use_snowprob_obs"]:
