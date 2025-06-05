@@ -233,7 +233,7 @@ def run(timestamp, config):
     image_array_phys = image_array * gain + offset
     
     # Multiply rain values with radargauge factor
-    radargauge_factor_file = f"{radargauge_conf['path']}/{radargauge_conf['filename'].format(config=config)}"
+    radargauge_factor_file = f"{radargauge_conf['path']}/{radargauge_conf['filename'].format(timestamp=timestamp)}"
     radargauge_factor_array = read_radargauge_factor_array(radargauge_factor_file)
     image_array_corr_rate = image_array_rate * 10 ** radargauge_factor_array
     
