@@ -179,8 +179,8 @@ def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=
         transform = osr.CoordinateTransformation(src_srs, dst_srs)
 
         # Transform lower-left and upper-right corners
-        ll_x, ll_y, _ = transform.TransformPoint(config["grid"]["ll_lon"], config["grid"]["ll_lat"])
-        ur_x, ur_y, _ = transform.TransformPoint(config["grid"]["ur_lon"], config["grid"]["ur_lat"])
+        ll_x, ll_y, _ = transform.TransformPoint(config["grid"]["ll_lon"], config["grid"]["ll_lat"], 0)
+        ur_x, ur_y, _ = transform.TransformPoint(config["grid"]["ur_lon"], config["grid"]["ur_lat"], 0)
 
         bounds = [ll_x, ll_y, ur_x, ur_y]
 
