@@ -38,6 +38,7 @@ import pickle
 import numpy as np
 import pyproj
 import yaml
+from osgeo import osr
 
 import exporters
 import util
@@ -154,16 +155,27 @@ def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=
     print("zvalues min, max: ", np.nanmin(zvalues), np.nanmax(zvalues))
         
     if config["output"]["type"] == "geotiff":
-        pr = pyproj.Proj(config["grid"]["projection"])
 
-        ll_x, ll_y = pr(config["grid"]["ll_lon"], config["grid"]["ll_lat"])
-        ur_x, ur_y = pr(config["grid"]["ur_lon"], config["grid"]["ur_lat"])
+        # Create source (WGS84 / lat-lon) spatial reference
+        src_srs = osr.SpatialReference()
+        src_srs.ImportFromEPSG(4326)  # WGS84
+
+        # Create destination spatial reference
+        dst_srs = osr.SpatialReference()
+        dst_srs.ImportFromProj4(config["grid"]["epsg_projection"])
+
+        # Set up coordinate transformation
+        transform = osr.CoordinateTransformation(src_srs, dst_srs)
+
+        # Transform corner coordinates
+        ll_x, ll_y, _ = transform.TransformPoint(config["grid"]["ll_lon"], config["grid"]["ll_lat"])
+        ur_x, ur_y, _ = transform.TransformPoint(config["grid"]["ur_lon"], config["grid"]["ur_lat"])
 
         bounds = [ll_x, ll_y, ur_x, ur_y]
-
+        
         fn = outfile + ".tif"
 
-        # Save only zvalues
+        # Save zvalues using the same projection
         exporters.export_geotiff(fn, zvalues, config["grid"]["projection"], bounds)
         
     elif config["output"]["type"] == "numpy":
