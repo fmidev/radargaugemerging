@@ -162,7 +162,7 @@ def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=
         ur_x, ur_y = pr(config["grid"]["ur_lon"], config["grid"]["ur_lat"])
 
         bounds = [ll_x, ll_y, ur_x, ur_y]
-        fn = args.outfile + ".tif"
+        fn = outfile + ".tif"
 
         # Export only zvalues
         exporters.export_geotiff(fn, zvalues, config["grid"]["projection"], bounds)
