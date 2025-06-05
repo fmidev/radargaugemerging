@@ -235,14 +235,14 @@ def run(timestamp, config):
     # Multiply rain values with radargauge factor
     radargauge_factor_file = f"{radargauge_conf['path']}/{radargauge_conf['filename'].format(timestamp=timestamp)}"
     radargauge_factor_array = read_radargauge_factor_array(radargauge_factor_file)
-    image_array_corr_rate = image_array_rate * 10 ** radargauge_factor_array
+    image_array_corr_rate = image_array_phys * 10 ** radargauge_factor_array
     
     # Convert back to 16bit (or 8bit) unsigned integer values
-    image_array_dbz = convert_dtype(image_array_dbz, nodata_mask, undetect_mask, nodata, undetect, gain, offset)
+    image_array_rate = convert_dtype(image_array_corr_rate, nodata_mask, undetect_mask, nodata, undetect, gain, offset)
     
     # Write to file
     output_file = f"{output_conf['path'].format(year=timestamp[0:4], month=timestamp[4:6], day=timestamp[6:8])}/{output_conf['filename'].format(timestamp=timestamp, config=config)}"
-    overwrite_dataset_hdf5(input_file, output_file, dataset_path, image_array_dbz)
+    overwrite_dataset_hdf5(input_file, output_file, dataset_path, image_array_rate)
 
     
 def main():
