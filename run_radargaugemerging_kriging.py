@@ -39,7 +39,7 @@ def main():
         print("snowprob_array: ", snowprob_array)
     
         # Compute kriged correction factor
-        correction_factor_file_without_extension = f"{args.outpath}/{timestamp}_composite_cappi_600_gaugecorrfactor_{args.config}_filtered.h5"
+        correction_factor_file_without_extension = f"{args.outpath}/{timestamp}_composite_cappi_600_gaugecorrfactor_{args.config}_filtered"
         compute_kriged_correction_factors.run(kriging_model_file, timestamp, correction_factor_file_without_extension, args.config, nodata_mask, snowprob_array)
 
     else:
