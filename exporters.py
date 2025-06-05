@@ -12,8 +12,8 @@ def export_geotiff(filename, zvalues, projection, bounds):
         Output file name.
     zvalues : 2D array_like
         Two-dimensional array (height, width) to write.
-    projection : int or str
-        EPSG code (e.g., 3067) or PROJ string (e.g., "+proj=utm +zone=35 ...").
+    projection : str
+        PROJ-compatible projection definition.
     bounds : list or tuple
         (x_min, y_min, x_max, y_max) defining the geographical bounds.
     """
@@ -30,21 +30,7 @@ def export_geotiff(filename, zvalues, projection, bounds):
     )
 
     srs = osr.SpatialReference()
-
-    # Handle both EPSG codes and PROJ strings
-    if isinstance(projection, int):
-        srs.ImportFromEPSG(projection)
-    elif isinstance(projection, str):
-        if projection.lower().startswith("epsg:"):
-            epsg_code = int(projection.split(":")[1])
-            srs.ImportFromEPSG(epsg_code)
-        else:
-            ret = srs.ImportFromProj4(projection)
-            if ret != 0:
-                raise ValueError(f"Invalid PROJ string: {projection}")
-    else:
-        raise TypeError("projection must be int, 'EPSG:xxxx', or PROJ string")
-
+    srs.ImportFromProj4(projection)
     dst.SetProjection(srs.ExportToWkt())
 
     xmin, ymin, xmax, ymax = bounds
@@ -58,4 +44,4 @@ def export_geotiff(filename, zvalues, projection, bounds):
     band.SetNoDataValue(0.0)
 
     dst.FlushCache()
-    dst = None
+

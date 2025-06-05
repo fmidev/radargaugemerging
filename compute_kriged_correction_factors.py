@@ -154,40 +154,18 @@ def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=
 
     print("zvalues min, max: ", np.nanmin(zvalues), np.nanmax(zvalues))
         
+
     if config["output"]["type"] == "geotiff":
-        # Define source CRS: WGS84 (longitude/latitude)
-        src_srs = osr.SpatialReference()
-        src_srs.ImportFromEPSG(4326)
+        pr = pyproj.Proj(config["grid"]["projection"])
 
-        # Define destination CRS: from config (could be EPSG code or proj string)
-        dst_srs = osr.SpatialReference()
-
-        projection = config["grid"]["projection"]
-        if isinstance(projection, int):
-            dst_srs.ImportFromEPSG(projection)
-        elif isinstance(projection, str):
-            if projection.lower().startswith("epsg:"):
-                dst_srs.ImportFromEPSG(int(projection.split(":")[1]))
-            else:
-                ret = dst_srs.ImportFromProj4(projection)
-                if ret != 0:
-                    raise ValueError(f"Invalid PROJ string: {projection}")
-        else:
-            raise TypeError("Unsupported projection type")
-
-        # Create transformer
-        transform = osr.CoordinateTransformation(src_srs, dst_srs)
-
-        # Transform lower-left and upper-right corners
-        ll_x, ll_y, _ = transform.TransformPoint(config["grid"]["ll_lon"], config["grid"]["ll_lat"], 0)
-        ur_x, ur_y, _ = transform.TransformPoint(config["grid"]["ur_lon"], config["grid"]["ur_lat"], 0)
+        ll_x, ll_y = pr(config["grid"]["ll_lon"], config["grid"]["ll_lat"])
+        ur_x, ur_y = pr(config["grid"]["ur_lon"], config["grid"]["ur_lat"])
 
         bounds = [ll_x, ll_y, ur_x, ur_y]
+        fn = args.outfile + ".tif"
 
-        fn = outfile + ".tif"
-
-        # Save only zvalues
-        exporters.export_geotiff(fn, zvalues, projection, bounds)
+        # Export only zvalues
+        exporters.export_geotiff(fn, zvalues, config["grid"]["projection"], bounds)
         
     elif config["output"]["type"] == "numpy":
         np.savez_compressed(outfile, corr=zvalues, corr_var=sigmasq)
