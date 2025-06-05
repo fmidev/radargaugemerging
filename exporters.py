@@ -3,29 +3,28 @@
 from osgeo import gdal, osr
 
 
-def export_geotiff(filename, rasters, projection, bounds):
-    """Write rasters to a GeoTIFF file.
+def export_geotiff(filename, zvalues, projection, bounds):
+    """Write a single-band array to a GeoTIFF file.
 
     Parameters
     ----------
     filename : str
-      Output file name.
-    rasters : array_like
-      Three-dimensional array of shape (channels,height,width) containing the
-      rasters to write.
+        Output file name.
+    zvalues : 2D array_like
+        Two-dimensional array (height, width) to write.
     projection : str
-      PROJ-compatible projection definition.
+        PROJ-compatible projection definition.
     bounds : list or tuple
-      List or tuple (x_min,y_min,x_max,y_max) defining the geographical bounds
-      of the rasters.
+        (x_min, y_min, x_max, y_max) defining the geographical bounds.
     """
     driver = gdal.GetDriverByName("GTiff")
+    ny, nx = zvalues.shape
 
     dst = driver.Create(
         filename,
-        rasters.shape[2],
-        rasters.shape[1],
-        rasters.shape[0],
+        nx,
+        ny,
+        1,  # Single band
         gdal.GDT_Float32,
         ["COMPRESS=DEFLATE", "PREDICTOR=3"],
     )
@@ -35,17 +34,13 @@ def export_geotiff(filename, rasters, projection, bounds):
     dst.SetProjection(srs.ExportToWkt())
 
     xmin, ymin, xmax, ymax = bounds
-
-    ny = rasters.shape[1]
-    nx = rasters.shape[2]
     xres = (xmax - xmin) / nx
     yres = (ymax - ymin) / ny
     geotransform = (xmin, xres, 0, ymax, 0, -yres)
     dst.SetGeoTransform(geotransform)
 
-    for i in range(rasters.shape[0]):
-        band = dst.GetRasterBand(i + 1)
-        band.WriteArray(rasters[i])
-        band.SetNoDataValue(0.0)
+    band = dst.GetRasterBand(1)
+    band.WriteArray(zvalues)
+    band.SetNoDataValue(0.0)
 
     dst.FlushCache()

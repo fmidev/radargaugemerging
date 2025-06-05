@@ -160,9 +160,12 @@ def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=
         ur_x, ur_y = pr(config["grid"]["ur_lon"], config["grid"]["ur_lat"])
 
         bounds = [ll_x, ll_y, ur_x, ur_y]
-        out_rasters = np.stack([zvalues, sigmasq])
+
         fn = outfile + ".tif"
-        exporters.export_geotiff(fn, out_rasters, config["grid"]["projection"], bounds)
+
+        # Save only zvalues
+        exporters.export_geotiff(fn, zvalues, config["grid"]["projection"], bounds)
+        
     elif config["output"]["type"] == "numpy":
         np.savez_compressed(outfile, corr=zvalues, corr_var=sigmasq)
     else:
