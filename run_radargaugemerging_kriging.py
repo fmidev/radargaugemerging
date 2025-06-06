@@ -4,6 +4,7 @@ import datetime
 from pathlib import Path
 import json
 import configparser
+import os
 
 import util
 import exporters
@@ -52,7 +53,7 @@ def main():
         # read configuration file for writing the Geotiff
         config = configparser.ConfigParser()
         config.read(
-            os.path.join("config", profile, "compute_kriged_correction_factors.cfg")
+            os.path.join("config", args.config, "compute_kriged_correction_factors.cfg")
         )
 
         n_pixels_x = int(config["grid"]["n_pixels_x"])
