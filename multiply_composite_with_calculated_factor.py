@@ -137,7 +137,11 @@ def convert_dtype(image_array, nodata_mask, undetect_mask, nodata, undetect, gai
         dtype = "uint16"
     elif nodata == 255:
         dtype = "uint8"
-        
+    elif nodata == -1:
+        dtype = "int32"
+    else:
+        raise ValueError(f"Datatype for nodata value {nodata} not implemented!")
+    
     scaled_image = (image_array - offset) / gain    
     scaled_image[nodata_mask] = nodata
     scaled_image[undetect_mask] = undetect
