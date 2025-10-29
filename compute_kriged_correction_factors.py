@@ -67,12 +67,12 @@ def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=
             f"unsupported Kriging method {config['kriging']['method']}: choose 'ordinary' or 'regression'"
         )
 
-    with open(os.path.join("config", args.profile, "radar_locations.yaml"), "r") as f:
+    with open(os.path.join("config", profile, "radar_locations.yaml"), "r") as f:
         config_radarlocs = yaml.safe_load(f)
     radar_locs = util.read_radar_locations(config_radarlocs)
 
     # read Kriging model
-    model = pickle.load(open(args.model, "rb"))
+    model = pickle.load(open(model, "rb"))
 
     projection = config["grid"]["projection"]
 
@@ -97,7 +97,7 @@ def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=
     grid_y += 0.5 * (grid_y[1] - grid_y[0])
     grid_y = grid_y[:-1]
 
-    ts = datetime.strptime(args.outtime, "%Y%m%d%H%M")
+    ts = datetime.strptime(outtime, "%Y%m%d%H%M")
     grid_z = np.ones((1,)) * ts.timestamp()
 
     # project radar locations to grid coordinates
@@ -206,10 +206,10 @@ def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=
 
         bounds = [ll_x, ll_y, ur_x, ur_y]
         out_rasters = np.stack([zvalues, sigmasq])
-        fn = args.outfile + ".tif"
+        fn = outfile + ".tif"
         exporters.export_geotiff(fn, out_rasters, config["grid"]["projection"], bounds)
     elif config["output"]["type"] == "numpy":
-        np.savez_compressed(args.outfile, corr=zvalues.filled(), corr_var=sigmasq.filled())
+        np.savez_compressed(outfile, corr=zvalues.filled(), corr_var=sigmasq.filled())
     else:
         raise ValueError(
             f"Output format {config['output']['type']} not supported. The valid options are 'geotiff' and 'numpy'"
