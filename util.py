@@ -73,7 +73,7 @@ def compute_distance_to_nearest_radar(gauge_loc, radar_locs):
     return np.min(dists)
 
 
-def compute_gridded_distances_to_nearest_radar(
+def compute_gridded_distances_to_nearest_points(
     grid_ll_x, grid_ll_y, grid_ur_x, grid_ur_y, n_pixels_x, n_pixels_y, radar_locs
 ):
     """Compute distance of the given location to the nearest radar in a grid.
