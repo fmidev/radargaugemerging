@@ -35,10 +35,12 @@ from datetime import datetime
 import os
 import pickle
 
+from affine import Affine
 import numpy as np
 import pyproj
+from rasterio import features
+import shapely
 import yaml
-from osgeo import osr
 
 import exporters
 import util
