@@ -5,7 +5,6 @@ channels:
 dependencies:
   - _libgcc_mutex=0.1=conda_forge
   - _openmp_mutex=4.5=2_gnu
-  - affine
   - alsa-lib=1.2.13=hb9d3cd8_0
   - aom=3.9.1=hac33072_0
   - asttokens=3.0.0=pyhd8ed1ab_1
@@ -173,7 +172,6 @@ dependencies:
   - scikit-learn=1.6.1=py312h7a48858_0
   - scipy=1.15.2=py312ha707e6e_0
   - setuptools=75.8.2=pyhff2d567_0
-  - shapely
   - six=1.17.0=pyhd8ed1ab_0
   - snappy=1.2.1=h8bd8927_1
   - sqlite=3.49.1=h9eae976_1

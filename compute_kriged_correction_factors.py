@@ -35,10 +35,8 @@ from datetime import datetime
 import os
 import pickle
 
-from affine import Affine
 import numpy as np
 import pyproj
-import shapely
 import yaml
 
 import exporters
