@@ -167,7 +167,6 @@ dependencies:
   - pyyaml=6.0.2=py312h178313f_2
   - qhull=2020.2=h434a139_5
   - qt6-main=6.8.2=h588cce1_0
-  - rasterio
   - rav1e=0.6.6=he8a937b_2
   - readline=8.2=h8c095d6_2
   - requests=2.32.3=pyhd8ed1ab_1

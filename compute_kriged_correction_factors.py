@@ -38,7 +38,6 @@ import pickle
 from affine import Affine
 import numpy as np
 import pyproj
-from rasterio import features
 import shapely
 import yaml
 
@@ -162,27 +161,6 @@ def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=
     gauge_dist_mask = gauge_dist_grid < float(config["output"]["max_dist_to_nearest_gauge"])
 
     exclude_mask = radar_dist_mask
-    
-    if config.getboolean("output", "gauge_convex_hull_mask"):
-        geom = shapely.MultiPoint(np.column_stack([xp, yp]))
-        convex_hull = shapely.convex_hull(geom)
-
-        xscale = (ur_x - ll_x) / int(config["grid"]["n_pixels_x"])
-        yscale = (ur_y - ll_y) / int(config["grid"]["n_pixels_y"])
-        transform = Affine(xscale, 0, ll_x, 0, yscale, ll_y)
-        convex_hull_mask = features.rasterize(
-            [convex_hull],
-            out_shape=zvalues.shape,
-            transform=transform,
-            fill=0,
-            default_value=1,
-        )
-
-        exclude_mask = np.logical_and(
-            exclude_mask, np.logical_or(convex_hull_mask == 1, gauge_dist_mask)
-        )
-    else:
-        exclude_mask = np.logical_and(exclude_mask, gauge_dist_mask)
 
     if float(config["output"]["mask_blur_distance"]) > 0:
         weights = util.compute_mask_boundary_weights(
