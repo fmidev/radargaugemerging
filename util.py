@@ -6,6 +6,7 @@ import requests
 import numpy as np
 from pathlib import Path
 import hiisi
+from scipy.spatial import KDTree
 
 
 def compute_mask_boundary_weights(mask, max_dist):
