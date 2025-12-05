@@ -18,8 +18,9 @@ def export_geotiff(filename, zvalues, projection, bounds):
         (x_min, y_min, x_max, y_max) defining the geographical bounds.
     """
     driver = gdal.GetDriverByName("GTiff")
+    print("zvalues.shape: ", zvalues.shape)
     ny, nx = zvalues.shape
-
+    
     dst = driver.Create(
         filename,
         nx,
