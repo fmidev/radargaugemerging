@@ -160,6 +160,11 @@ def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=
 
     exclude_mask = radar_dist_mask
 
+    if config["snowprob"]["use_snowprob_obs"]:
+        mask = (snowprob > snow_threshold) & (~np.isnan(snowprob))
+        zvalues[mask] = 0.0
+        sigmasq[mask] = 0.0
+    
     if float(config["output"]["mask_blur_distance"]) > 0:
         weights = util.compute_mask_boundary_weights(
             exclude_mask, float(config["output"]["mask_blur_distance"])
@@ -169,11 +174,6 @@ def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=
     else:
         zvalues[~exclude_mask] = np.nan
 
-    if config["snowprob"]["use_snowprob_obs"]:
-        mask = (snowprob > snow_threshold) & (~np.isnan(snowprob))
-        zvalues[mask] = 0.0
-        sigmasq[mask] = 0.0
-        
     print("zvalues min, max: ", np.nanmin(zvalues), np.nanmax(zvalues))       
         
     if config["output"]["type"] == "geotiff":
