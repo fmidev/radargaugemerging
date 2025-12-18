@@ -10,18 +10,27 @@ import hiisi
 from scipy.spatial import KDTree
 
 
-def compute_gauge_accumulations(gauge_obs, accum_period, timestep):
+def compute_gauge_accumulations(
+    gauge_obs,
+    obs_accum_period,
+    target_accum_period,
+    timestep,
+):
     """Compute accumulated rainfall from gauge observations read by using
     query_rain_gauges. Time periods with one or more missing observations are
     skipped.
+
     Parameters
     ----------
     gauge_obs : list
         List of gauge observation tuples. See the output of query_rain_gauges.
-    accum_period : int
-        Length of the accumulation period (minutes).
+    obs_accum_period : int
+        Accumulation period of the observations (minutes).
+    target_accum_period : int
+        Length of the accumulation period in the output (minutes).
     timestep : int
         Time step between gauge observations (minutes).
+
     Returns
     -------
     out : list
@@ -31,28 +40,38 @@ def compute_gauge_accumulations(gauge_obs, accum_period, timestep):
     gauge_obs_dict = defaultdict(dict)
     for g in gauge_obs:
         gauge_obs_dict[g[1]][g[0]] = g[2]
+
     out = []
+
+    multiplier = timestep / obs_accum_period
+
     for sid in gauge_obs_dict.keys():
         startdate = min(gauge_obs_dict[sid].keys())
         enddate = max(gauge_obs_dict[sid].keys())
+
         curdate = startdate
         while curdate <= enddate:
-            curdate_window = curdate - timedelta(minutes=accum_period)
+            curdate_window = curdate - timedelta(minutes=target_accum_period - timestep)
             missing_data = False
             accum = 0
+
             while curdate_window <= curdate:
                 if curdate_window in gauge_obs_dict[sid].keys():
                     v = gauge_obs_dict[sid][curdate_window]
                     if np.isfinite(v):
-                        accum += v
+                        accum += v * multiplier
                     else:
                         missing_data = True
                 else:
                     missing_data = True
+
                 curdate_window = curdate_window + timedelta(minutes=timestep)
+
             if not missing_data:
                 out.append((curdate, sid, accum))
+
             curdate = curdate + timedelta(minutes=timestep)
+
     return out
 
 
@@ -122,7 +141,7 @@ def compute_distance_to_nearest_radar(gauge_loc, radar_locs):
 
 
 def compute_gridded_distances_to_nearest_points(
-    grid_ll_x, grid_ll_y, grid_ur_x, grid_ur_y, n_pixels_x, n_pixels_y, radar_locs
+    grid_ll_x, grid_ll_y, grid_ur_x, grid_ur_y, n_pixels_x, n_pixels_y, point_locs
 ):
     """Compute distance of the given location to the nearest radar in a grid.
 
@@ -140,11 +159,13 @@ def compute_gridded_distances_to_nearest_points(
         Number of grid pixels in x-direction.
     n_pixels_y : int
         Number of grid pixels in y-direction.
+    point_locs : dict
+        Dictionary containing (x, y) tuples of point locations.
 
     Returns
     -------
     out : numpy.ndarray
-        Gridded distances to the nearest radar.
+        Gridded distances to the nearest points in point_locs.
     """
     x = np.linspace(grid_ll_x, grid_ur_x, n_pixels_x + 1)[:-1]
     x += 0.5 * (x[1] - x[0])
@@ -153,9 +174,9 @@ def compute_gridded_distances_to_nearest_points(
     grid_x, grid_y = np.meshgrid(x, y)
 
     dist_grid = np.ones(grid_x.shape) * np.inf
-    for k in radar_locs.keys():
-        dx = np.array(radar_locs[k][0]) - grid_x
-        dy = np.array(radar_locs[k][1]) - grid_y
+    for k in point_locs.keys():
+        dx = np.array(point_locs[k][0]) - grid_x
+        dy = np.array(point_locs[k][1]) - grid_y
         dist_grid_cur = np.sqrt(dx * dx + dy * dy) / 1000.0
         dist_grid = np.minimum(dist_grid, dist_grid_cur)
 
@@ -222,8 +243,10 @@ def query_rain_gauges(
                     continue
                 if ur_lat is not None and lat > ur_lat:
                     continue
-                gauge_lonlat.add((fmisid, lon, lat))
-                gauge_obs.append((obstime, fmisid, obs))
+
+                if np.isfinite(obs):
+                    gauge_lonlat.add((fmisid, lon, lat))
+                    gauge_obs.append((obstime, fmisid, obs))
 
     return gauge_lonlat, gauge_obs
 

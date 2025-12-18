@@ -73,7 +73,12 @@ def run(startdate, enddate, outfile, profile):
 
     radar_timestep = int(config_radar["timestep"])
     radar_accum_period = int(config_ds["radar"]["accum_period"])
-    gauge_accum_period = int(config_ds["gauge"]["accum_period"])
+    gauge_accum_period = (
+        int(config_ds["gauge"]["accum_period"])
+        if config_ds["gauge"]["accumulate"] == "false"
+        else int(config_ds["gauge_accumulation"]["target_accum_period"])
+    )
+    gauge_timestep = int(config_ds["gauge"]["timestep"])
 
     browser = radar_archive.Browser(
         config_radar["root_path"],
@@ -118,8 +123,9 @@ def run(startdate, enddate, outfile, profile):
     if config_ds["gauge"]["accumulate"] == "true":
         gauge_obs = util.compute_gauge_accumulations(
             gauge_obs,
-            int(config_ds["gauge_accumulation"]["accum_period"]),
-            int(config_ds["gauge_accumulation"]["timestep"]),
+            int(config_ds["gauge_accumulation"]["obs_accum_period"]),
+            int(config_ds["gauge_accumulation"]["target_accum_period"]),
+            int(config_ds["gauge"]["timestep"]),
         )
 
     # convert the lon-lat coordinates into grid coordinates (pixels)
@@ -157,7 +163,7 @@ def run(startdate, enddate, outfile, profile):
     g_thr = float(config["thresholds"]["gauge"])
 
     radar_gauge_pairs = defaultdict(dict)
-
+    
     rgpair_attribs = config["other"]["attributes"].split(",")
 
     gauge_lonlats = dict([(v[0], (v[1], v[2])) for v in gauge_lonlat])
@@ -187,10 +193,12 @@ def run(startdate, enddate, outfile, profile):
 
         for t in range(num_accum_timesteps):
             prev_radar_ts = radar_ts - t * timedelta(minutes=radar_accum_period)
+            if t == 0:
+                accum_start_ts = prev_radar_ts
             if not prev_radar_ts in radar_filenames.keys():
                 num_missing += 1
             else:
-                radar_rain_rate, _, nodata_mask = importer(
+                radar_rain_rate, _ = importer(
                     radar_filenames[prev_radar_ts], **config_ds["radar_importer_kwargs"]
                 )
                 radar_rain_accum_cur += radar_rain_rate
@@ -201,12 +209,13 @@ def run(startdate, enddate, outfile, profile):
                 f"  Skipping {radar_ts}: not enough previous files found for computing accumulated radar rainfall."
             )
         elif num_found == 0:
-            print(f"  No radar composites found between {prev_radar_ts} - {radar_ts}.")
+            print(f"  No radar composites found between {accum_start_ts} - {radar_ts}.")
         else:
             print(
-                f"  Computed radar accumulation between {prev_radar_ts} - {radar_ts} from {num_found} time stamps."
+                f"  Computed radar accumulation between {accum_start_ts} - {radar_ts} from {num_found} time stamps."
             )
             radar_rain_accum_cur /= num_found
+            radar_rain_accum_cur *= gauge_accum_period / 60
             radar_rain_accum_shape = radar_rain_accum_cur.shape
 
             if radar_ts in gauge_obs.keys():
@@ -249,22 +258,26 @@ def run(startdate, enddate, outfile, profile):
 
                 print(f"  Collected {num_radar_gauge_pairs} radar-gauge pairs.")
 
-        radar_ts += timedelta(minutes=gauge_accum_period)
+        radar_ts += timedelta(minutes=gauge_timestep)
 
-    mae = 0.0
-    n = 0
+    errors = []
     for p1 in radar_gauge_pairs.values():
         for p2 in p1.values():
-            mae += abs(p2[0] - p2[1])
-            n += 1
+            errors.append(p2[0] - p2[1])
+    errors = np.array(errors)
 
-    mae = mae / n if n > 0 else np.nan
+    if len(errors) > 0:
+        mae = np.mean(np.abs(errors))
+        me = np.mean(errors)
+        std = np.std(errors)
 
-    print(f"Total number of radar-gauge pairs: {n}")
-    print(f"Mean absolute radar-gauge error: {mae}")
+        print(f"Total number of radar-gauge pairs: {len(errors)}")
+        print(f"Mean absolute radar-gauge error: {mae}")
+        print(f"Mean radar-gauge error: {me}")
+        print(f"Std. dev. of error: {std}")
 
-    print(f"Wrote output to {outfile}.")
+        print(f"Wrote output to {outfile}.")
 
-    pickle.dump(radar_gauge_pairs, open(outfile, "wb"))
-
-    return n, nodata_mask
+        pickle.dump(radar_gauge_pairs, open(outfile, "wb"))
+    else:
+        print("No output file written: no valid radar-gauge pairs found")
