@@ -261,6 +261,7 @@ def run(startdate, enddate, outfile, profile):
         radar_ts += timedelta(minutes=gauge_timestep)
 
     errors = []
+    
     for p1 in radar_gauge_pairs.values():
         for p2 in p1.values():
             errors.append(p2[0] - p2[1])
@@ -281,3 +282,5 @@ def run(startdate, enddate, outfile, profile):
         pickle.dump(radar_gauge_pairs, open(outfile, "wb"))
     else:
         print("No output file written: no valid radar-gauge pairs found")
+
+    return len(errors), nodata_mask
