@@ -26,6 +26,7 @@ import os
 import pickle
 
 import numpy as np
+from pykrige.ok import OrdinaryKriging
 from pykrige.ok3d import OrdinaryKriging3D
 from pykrige.rk import RegressionKriging
 
@@ -60,9 +61,12 @@ def run(rgpairfile, outfile, profile):
     # collect radar-gauge pairs for fitting the model
     x = []
     y = []
-    z = []
+    if int(config["kriging"]["dimensions"]) == 3:
+        z = []
     val = []
 
+    epsilon = float(config["kriging"]["epsilon"])
+    
     for timestamp in radar_gauge_pairs.keys():
         for fmisid in radar_gauge_pairs[timestamp].keys():
             p = radar_gauge_pairs[timestamp][fmisid]
@@ -70,20 +74,22 @@ def run(rgpairfile, outfile, profile):
 
             x.append(x_)
             y.append(y_)
-            z.append(timestamp.timestamp())
-            val.append(np.log10(p[1] / p[0]))
+            if int(config["kriging"]["dimensions"]) == 3:
+                z.append(timestamp.timestamp())
+            val.append(np.log10((p[1] + epsilon) / (p[0] + epsilon)))
 
     if len(val) < int(config["kriging"]["min_valid_points"]):
         raise Exception(
             f"{len(val)} radar-gauge pairs found but {config['kriging']['min_valid_points']} required"
         )
 
-    if config["kriging"]["time_scaling_factor"] == "auto":
-        # a heuristic value to relate the standard deviations of the
-        # spatial coordinates and timestamps to each other
-        anisotropy_scaling_z = 0.5 * (np.std(x) + np.std(y)) / np.std(z)
-    else:
-        anisotropy_scaling_z = float(config["kriging"]["time_scaling_factor"])
+    if int(config["kriging"]["dimensions"]) == 3:
+        if config["kriging"]["time_scaling_factor"] == "auto":
+            # a heuristic value to relate the standard deviations of the
+            # spatial coordinates and timestamps to each other
+            anisotropy_scaling_z = 0.5 * (np.std(x) + np.std(y)) / np.std(z)
+        else:
+            anisotropy_scaling_z = float(config["kriging"]["time_scaling_factor"])
 
     n_closest_points = int(config["kriging"]["n_closest_points"])
     if n_closest_points == 0:
@@ -99,42 +105,69 @@ def run(rgpairfile, outfile, profile):
 
     x = np.array(x)[mask]
     y = np.array(y)[mask]
-    z = np.array(z)[mask]
+    if int(config["kriging"]["dimensions"]) == 3:
+        z = np.array(z)[mask]
     val = val[mask]
 
     if config["kriging"]["method"] == "ordinary":
-        model = OrdinaryKriging3D(
-            x,
-            y,
-            z,
-            val,
-            variogram_model="exponential",
-            anisotropy_scaling_z=anisotropy_scaling_z,
-            n_closest_points=n_closest_points,
-            verbose=True,
-        )
+        if int(config["kriging"]["dimensions"]) == 2:
+            model = OrdinaryKriging(
+                x,
+                y,
+                val,
+                variogram_model="spherical",
+                verbose=True,
+            )
+        else:
+            model = OrdinaryKriging3D(
+                x,
+                y,
+                z,
+                val,
+                variogram_model="spherical",
+                anisotropy_scaling_z=anisotropy_scaling_z,
+                verbose=True,
+            )
     else:
         if not SKLEARN_IMPORTED:
             raise ModuleNotFoundError(
                 "sklearn needed for fitting regression models not found"
             )
 
-        dists = []
-        for timestamp in radar_gauge_pairs.keys():
-            for fmisid in radar_gauge_pairs[timestamp].keys():
-                dists.append(radar_gauge_pairs[timestamp][fmisid][2]["distance_to_radar"])
+        regr_vars = config["regression"]["variables"].split(",")
+        regr_var_values = [[] for i in range(len(regr_vars))]
 
-        dists = np.array(dists)[mask]
+        for i, regr_var in enumerate(regr_vars):
+            for timestamp in radar_gauge_pairs.keys():
+                for fmisid in radar_gauge_pairs[timestamp].keys():
+                    regr_var_values[i].append(
+                        radar_gauge_pairs[timestamp][fmisid][2][regr_var]
+                    )
+
+        regr_var_values = np.column_stack(regr_var_values)[mask, :]
 
         regression_model = LinearRegression()
+
+        if int(config["kriging"]["dimensions"]) == 3:
+            method = "ordinary3d"
+            anisotropy_scaling = (1, anisotropy_scaling_z)
+        else:
+            method = "ordinary"
+            anisotropy_scaling = (1, 1)
+            
         model = RegressionKriging(
             regression_model=regression_model,
-            method="ordinary3d",
-            variogram_model="exponential",
-            anisotropy_scaling=(1, anisotropy_scaling_z),
+            method=method,
+            variogram_model="spherical",
+            anisotropy_scaling=anisotropy_scaling,
             n_closest_points=n_closest_points,
             verbose=True,
         )
-        model.fit(np.array(dists)[:, np.newaxis], np.column_stack([x, y, z]), val)
+        points = (
+            np.column_stack([x, y, z])
+            if int(config["kriging"]["dimensions"]) == 3
+            else np.column_stack([x, y])
+        )
+        model.fit(regr_var_values, points, val)
 
     pickle.dump(model, open(outfile, "wb"))

@@ -60,6 +60,12 @@ def run(startdate, enddate, outfile, profile):
     config = configparser.ConfigParser()
     config.read(os.path.join("config", profile, "collect_radar_gauge_pairs.cfg"))
 
+    if config["gauge_selection"]["excluded_station_file"] != "":
+        lines = open(config["gauge_selection"]["excluded_station_file"], "r").readlines()
+        excluded_station_ids = [l.strip("\n") for l in lines]
+    else:
+        excluded_station_ids = None
+    
     config_ds = configparser.ConfigParser(interpolation=None)
     config_ds.read(os.path.join("config", profile, "datasources.cfg"))
 
@@ -89,7 +95,9 @@ def run(startdate, enddate, outfile, profile):
     )
 
     # read radar file names from the archive
-    curdate = startdate
+    curdate = startdate - timedelta(
+        minutes=max(int(config_ds["radar"]["accum_period"]), gauge_accum_period)
+    )
     radar_filenames = {}
 
     while curdate <= enddate:
@@ -108,17 +116,29 @@ def run(startdate, enddate, outfile, profile):
     cols = ["lpnn", "lat", "lat_sec", "lon", "lon_sec", "grlat", "grlon", "nvl(elstat,0)"]
     col_names = ["lpnn", "lat", "lat_sec", "lon", "lon_sec", "grlat", "grlon", "elstat"]
 
-    print("Querying gauge observations from SmartMet: ", end="", flush=True)
+    if config_ds["gauge"]["gauge_type"] != "NETATMO":
+        print("Querying FMI gauges from SmartMet: ", end="", flush=True)
 
-    gauge_lonlat, gauge_obs = util.query_rain_gauges(
-        startdate,
-        enddate,
-        config_gauge,
-        ll_lon=float(config["bbox"]["ll_lon"]),
-        ll_lat=float(config["bbox"]["ll_lat"]),
-        ur_lon=float(config["bbox"]["ur_lon"]),
-        ur_lat=float(config["bbox"]["ur_lat"]),
-    )
+        if config_ds["gauge"]["accumulate"] == "true":
+            gauge_startdate = startdate - timedelta(minutes=gauge_accum_period)
+        else:
+            gauge_startdate = startdate
+        
+        gauge_lonlat, gauge_obs = util.query_rain_gauges(
+            startdate - timedelta(minutes=gauge_accum_period),
+            enddate,
+            config_gauge,
+            ll_lon=float(config["bbox"]["ll_lon"]),
+            ll_lat=float(config["bbox"]["ll_lat"]),
+            ur_lon=float(config["bbox"]["ur_lon"]),
+            ur_lat=float(config["bbox"]["ur_lat"]),
+        )
+    else:
+        print("Querying Netatmo: ", end="", flush=True)
+
+        gauge_lonlat, gauge_obs = util.query_netatmo(
+            startdate, enddate, config_gauge, data_path="/data/seppo/netatmo"
+        )
 
     if config_ds["gauge"]["accumulate"] == "true":
         gauge_obs = util.compute_gauge_accumulations(
@@ -173,7 +193,7 @@ def run(startdate, enddate, outfile, profile):
     radar_ts = startdate
     while radar_ts <= enddate:
         print(
-            f"Collecting radar-gauge pairs between {enddate - timedelta(minutes=gauge_accum_period)} - {enddate}:"
+            f"Collecting radar-gauge pairs for {radar_ts - timedelta(minutes=gauge_accum_period)} - {radar_ts}:"
         )
 
         importer = importers.get_method(config_radar["importer"])
@@ -184,17 +204,16 @@ def run(startdate, enddate, outfile, profile):
         num_accum_timesteps = gauge_accum_period / radar_accum_period
         if int(num_accum_timesteps) != num_accum_timesteps:
             raise ValueError(
-                "gauge accumulation period not divisible by radar accumulation period"
+                f"gauge accumulation period ({gauge_accum_period}) not divisible by radar accumulation period ({radar_accum_period})"
             )
         num_accum_timesteps = int(num_accum_timesteps)
         num_missing = 0
         num_found = 0
         radar_rain_accum_cur = 0.0
 
+        accum_start_ts = radar_ts - timedelta(minutes=gauge_accum_period)
         for t in range(num_accum_timesteps):
             prev_radar_ts = radar_ts - t * timedelta(minutes=radar_accum_period)
-            if t == 0:
-                accum_start_ts = prev_radar_ts
             if not prev_radar_ts in radar_filenames.keys():
                 num_missing += 1
             else:
@@ -205,14 +224,10 @@ def run(startdate, enddate, outfile, profile):
                 num_found += 1
 
         if num_missing > int(config["missing_values"]["max_missing_radar_timestamps"]):
-            print(
-                f"  Skipping {radar_ts}: not enough previous files found for computing accumulated radar rainfall."
-            )
-        elif num_found == 0:
-            print(f"  No radar composites found between {accum_start_ts} - {radar_ts}.")
+            print("  Not enough radar composites found.")
         else:
             print(
-                f"  Computed radar accumulation between {accum_start_ts} - {radar_ts} from {num_found} time stamps."
+                f"  Computed radar accumulation between {accum_start_ts} - {radar_ts} from {num_found} time steps."
             )
             radar_rain_accum_cur /= num_found
             radar_rain_accum_cur *= gauge_accum_period / 60
@@ -220,9 +235,14 @@ def run(startdate, enddate, outfile, profile):
 
             if radar_ts in gauge_obs.keys():
                 num_radar_gauge_pairs = 0
+                num_radar_gauge_pairs_above_thr = 0
                 g_cur = gauge_obs[radar_ts]
                 for g in g_cur:
                     fmisid = g[0]
+
+                    if excluded_station_ids is not None and fmisid in excluded_station_ids:
+                        continue
+                    
                     x, y = gauge_xy_n[fmisid][0], gauge_xy_n[fmisid][1]
                     x_ = int(np.floor(x * radar_rain_accum_shape[1]))
                     y_ = int(np.floor(y * radar_rain_accum_shape[0]))
@@ -236,6 +256,9 @@ def run(startdate, enddate, outfile, profile):
                         g_obs = g[1]
 
                         attrs = {}
+
+                        if "radar_rain" in rgpair_attribs:
+                            attrs["radar_rain"] = r_obs
 
                         if "distance_to_radar" in rgpair_attribs:
                             attrs["distance_to_radar"] = (
@@ -254,9 +277,12 @@ def run(startdate, enddate, outfile, profile):
                                 g_obs,
                                 attrs,
                             )
-                            num_radar_gauge_pairs += 1
+                            num_radar_gauge_pairs_above_thr += 1
+                        num_radar_gauge_pairs += 1
 
-                print(f"  Collected {num_radar_gauge_pairs} radar-gauge pairs.")
+                print(
+                    f"  Collected {num_radar_gauge_pairs_above_thr} / {num_radar_gauge_pairs} pairs (above thr / total)."
+                )
 
         radar_ts += timedelta(minutes=gauge_timestep)
 

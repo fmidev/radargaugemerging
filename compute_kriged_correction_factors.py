@@ -39,7 +39,9 @@ import numpy as np
 import pyproj
 import yaml
 
+import importers
 import exporters
+import radar_archive
 import util
 
 
@@ -97,13 +99,22 @@ def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=
     grid_y = grid_y[:-1]
 
     ts = datetime.strptime(outtime, "%Y%m%d%H%M")
-    grid_z = np.ones((1,)) * ts.timestamp()
+    if int(config["kriging"]["dimensions"]) == 3:
+        grid_z = np.ones((1,)) * ts.timestamp()
 
-    # project radar locations to grid coordinates
-    radar_xy = {}
-    for radar in radar_locs.keys():
-        x, y = pr(radar_locs[radar][0], radar_locs[radar][1])
-        radar_xy[radar] = (x, y)
+    if config["kriging"]["method"] == "regression":
+        regr_vars = config["regression"]["variables"].split(",")
+        
+    max_dist_to_nearest_radar = float(config["output"]["max_dist_to_nearest_radar"])
+    # TODO: move this into separate module
+    if max_dist_to_nearest_radar > 0 or (
+        config["kriging"]["method"] == "regression" and "distance" in regr_vars
+    ):
+        # project radar locations to grid coordinates
+        radar_xy = {}
+        for radar in radar_locs.keys():
+            x, y = pr(radar_locs[radar][0], radar_locs[radar][1])
+            radar_xy[radar] = (x, y)
 
     # compute gridded distances to the nearest radar for the regression model
     radar_dist_grid = util.compute_gridded_distances_to_nearest_points(
@@ -115,26 +126,68 @@ def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=
         int(config["grid"]["n_pixels_y"]),
         radar_xy,
     )
-
+    
     if config["kriging"]["method"] == "ordinary":
-        zvalues, sigmasq = model.execute("grid", grid_x, grid_y, grid_z)
+        if int(config["kriging"]["dimensions"]) == 2:
+            zvalues, sigmasq = model.execute("grid", grid_x, grid_y)
+        else:
+            zvalues, sigmasq = model.execute("grid", grid_x, grid_y, grid_z)
 
-        zvalues = zvalues[0, :]
-        sigmasq = sigmasq[0, :]
+        if int(config["kriging"]["dimensions"]) == 3:
+            zvalues = zvalues[0, :]
+            sigmasq = sigmasq[0, :]
 
-        zvalues.set_fill_value(np.nan)
-        sigmasq.set_fill_value(np.nan)
+        if isinstance(zvalues, np.ma.MaskedArray):
+            zvalues.set_fill_value(np.nan)
+            sigmasq.set_fill_value(np.nan)
 
         xp = model.X_ORIG
         yp = model.Y_ORIG
     else:
-        p = radar_dist_grid.flatten()[:, np.newaxis]
+        regr_var_values = [[] for i in range(len(regr_vars))]
+
+        for regr_var in regr_vars:
+            # TODO: move these into separate module
+            if regr_var == "distance":
+                p = radar_dist_grid.flatten()[:, np.newaxis]
+            elif regr_var == "radar_rain":
+                config_ds = configparser.ConfigParser(interpolation=None)
+                config_ds.read(os.path.join("config", args.profile, "datasources.cfg"))
+                config_radar = config_ds["radar"]
+
+                browser = radar_archive.Browser(
+                    config_radar["root_path"],
+                    config_radar["path_fmt"],
+                    config_radar["fn_pattern"],
+                    config_radar["fn_exts"].split(","),
+                    0,
+                )
+
+                try:
+                    fn = browser.listfiles(ts)
+                    
+                    if os.path.exists(fn[0][0]):
+                        fn = fn[0][0]
+                        print(f"Found radar file {os.path.basename(fn)}")
+                except FileNotFoundError:
+                    print(f"Radar file not found for {ts}")
+
+                importer = importers.get_method(config_radar["importer"])
+                radar_rain, _ = importer(fn, **config_ds["radar_importer_kwargs"])
+                radar_rain[~np.isfinite(radar_rain)] = 0
+                # TODO: check that distance and radar rain rate files are not upside down
+                radar_rain = np.flipud(radar_rain)
+                p = radar_rain.flatten()[:, np.newaxis]
+        
         n_x = len(grid_x)
         n_y = len(grid_y)
         grid_x, grid_y = np.meshgrid(grid_x, grid_y)
-        xp = np.column_stack(
-        [grid_x.flatten(), grid_y.flatten(), grid_z[0] * np.ones(grid_x.size)]
-        )
+        if int(config["kriging"]["dimensions"]) == 2:
+            xp = np.column_stack([grid_x.flatten(), grid_y.flatten()])
+        else:
+            xp = np.column_stack(
+                [grid_x.flatten(), grid_y.flatten(), grid_z[0] * np.ones(grid_x.size)]
+            )
         zvalues = model.predict(p, xp).reshape((n_y, n_x))
         sigmasq = np.zeros(zvalues.shape)
 
@@ -145,19 +198,27 @@ def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=
     for i in range(len(xp)):
         gauge_xy[i] = (xp[i], yp[i])
 
-    gauge_dist_grid = util.compute_gridded_distances_to_nearest_points(
-        ll_x,
-        ll_y,
-        ur_x,
-        ur_y,
-        int(config["grid"]["n_pixels_x"]),
-        int(config["grid"]["n_pixels_y"]),
-        gauge_xy,
-    )
+    if max_dist_to_nearest_radar > 0:
+        radar_dist_mask = radar_dist_grid < max_dist_to_nearest_radar
+    else:
+        radar_dist_mask = np.ones((n_pixels_y, n_pixels_x), dtype=bool)
 
-    radar_dist_mask = radar_dist_grid < float(config["output"]["max_dist_to_nearest_radar"])
-    gauge_dist_mask = gauge_dist_grid < float(config["output"]["max_dist_to_nearest_gauge"])
+    max_dist_to_nearest_gauge = float(config["output"]["max_dist_to_nearest_gauge"])
+    if max_dist_to_nearest_gauge > 0:
+        gauge_dist_grid = util.compute_gridded_distances_to_nearest_points(
+            ll_x,
+            ll_y,
+            ur_x,
+            ur_y,
+            int(config["grid"]["n_pixels_x"]),
+            int(config["grid"]["n_pixels_y"]),
+            gauge_xy,
+        )
 
+        gauge_dist_mask = gauge_dist_grid < max_dist_to_nearest_gauge
+    else:
+        gauge_dist_mask = np.ones((n_pixels_y, n_pixels_x), dtype=bool)
+        
     exclude_mask = radar_dist_mask
 
     if config["snowprob"]["use_snowprob_obs"]:
@@ -170,9 +231,12 @@ def run(model, outtime, outfile, profile, nodata_mask, snowprob, snow_threshold=
             exclude_mask, float(config["output"]["mask_blur_distance"])
         )
         zvalues *= weights
-        zvalues[weights == 0] = np.nan
+        sigmasq *= weights
+        zvalues[weights == 0] = 0
+        sigmasq[weights == 0] = 0
     else:
-        zvalues[~exclude_mask] = np.nan
+        zvalues[~exclude_mask] = 0
+        sigmasq[~exclude_mask] = 0
 
     print("zvalues min, max: ", np.nanmin(zvalues), np.nanmax(zvalues))       
         
