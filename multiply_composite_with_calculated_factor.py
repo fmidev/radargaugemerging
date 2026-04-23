@@ -249,13 +249,17 @@ def run(timestamp, config):
         if os.path.exists(candidate_file):
             radargauge_factor_file = candidate_file
             if minutes_back > 0:
-                print(f"[INFO] Using fallback radargauge file from -{minutes_back} min: {candidate_file}")
+                logging.info(
+                    f"Using fallback radargauge file from -{minutes_back} min: {candidate_file}"
+                )
             break
 
     if radargauge_factor_file is None:
+        logging.error(
+            f"No radargauge factor file found for {timestamp} or within 15 minutes before."
+        )
         raise FileNotFoundError(
-            f"[ERROR] No radargauge factor file found for {timestamp} "
-            f"or within 15 minutes before."
+            f"No radargauge factor file found for {timestamp} or within 15 minutes before."
         )
 
     radargauge_factor_array = read_radargauge_factor_array(radargauge_factor_file)
