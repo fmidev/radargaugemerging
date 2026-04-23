@@ -235,10 +235,31 @@ def run(timestamp, config):
     
     # Convert to physical values
     image_array_phys = image_array * gain + offset
-    
-    # Multiply rain values with radargauge factor
-    radargauge_factor_file = f"{radargauge_conf['path']}/{radargauge_conf['filename'].format(timestamp=timestamp)}"
+
+    # Read radargauge factor file
+    radargauge_factor_file = None
+
+    for minutes_back in [0, 5, 10, 15]:
+        check_time = formatted_timestamp - datetime.timedelta(minutes=minutes_back)
+        check_timestamp = check_time.strftime("%Y%m%d%H%M")
+
+        candidate_file = f"{radargauge_conf['path']}/{radargauge_conf['filename'].format(timestamp=check_timestamp)}"
+
+        if os.path.exists(candidate_file):
+            radargauge_factor_file = candidate_file
+            if minutes_back > 0:
+                print(f"[INFO] Using fallback radargauge file from -{minutes_back} min: {candidate_file}")
+            break
+
+    if radargauge_factor_file is None:
+        raise FileNotFoundError(
+            f"[ERROR] No radargauge factor file found for {timestamp} "
+            f"or within 15 minutes before."
+        )
+
     radargauge_factor_array = read_radargauge_factor_array(radargauge_factor_file)
+
+    # Apply correction
     image_array_corr_rate = image_array_phys * 10 ** radargauge_factor_array
     
     # Convert back to 16bit (or 8bit) unsigned integer values
