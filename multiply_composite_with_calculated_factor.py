@@ -10,6 +10,7 @@ import os
 import argparse
 import datetime
 import pickle
+import shutil
 from osgeo import gdal
 
 
@@ -254,25 +255,31 @@ def run(timestamp, config):
                 )
             break
 
-    if radargauge_factor_file is None:
-        logging.error(
-            f"No radargauge factor file found for {timestamp} or within 15 minutes before."
-        )
-        raise FileNotFoundError(
-            f"No radargauge factor file found for {timestamp} or within 15 minutes before."
-        )
-
-    radargauge_factor_array = read_radargauge_factor_array(radargauge_factor_file)
-
-    # Apply correction
-    image_array_corr_rate = image_array_phys * 10 ** radargauge_factor_array
-    
-    # Convert back to 16bit (or 8bit) unsigned integer values
-    image_array_rate = convert_dtype(image_array_corr_rate, nodata_mask, undetect_mask, nodata, undetect, gain, offset)
-    
-    # Write to file
     output_file = f"{output_conf['path'].format(year=timestamp[0:4], month=timestamp[4:6], day=timestamp[6:8])}/{output_conf['filename'].format(timestamp=timestamp, config=config)}"
-    overwrite_dataset_hdf5(input_file, output_file, dataset_path, image_array_rate)
+        
+    if radargauge_factor_file is None:
+        logging.info(
+            f"No radargauge factor file found for {timestamp} or within 15 minutes before. Copying original file {input_file} to {output_file} without modifications."
+        )
+
+       shutil.copyfile(input_file, output_file) 
+        
+    else:
+
+        logging.info(
+            f"Using radar-gauge factor field from file {radargauge_factor_file} to correct rain rate values."
+        )
+            
+        radargauge_factor_array = read_radargauge_factor_array(radargauge_factor_file)
+
+        # Apply correction
+        image_array_corr_rate = image_array_phys * 10 ** radargauge_factor_array
+    
+        # Convert back to 16bit (or 8bit) unsigned integer values
+        image_array_rate = convert_dtype(image_array_corr_rate, nodata_mask, undetect_mask, nodata, undetect, gain, offset)
+    
+        # Write to file
+        overwrite_dataset_hdf5(input_file, output_file, dataset_path, image_array_rate)
 
     
 def main():
