@@ -51,32 +51,6 @@ def main():
     else:
         print(f"Too few ({n_radargaugepairs}) radar-gauge pairs found, not calculating correction factor for timestamp {timestamp}.")
 
-        # read configuration file for writing the Geotiff
-        #config = configparser.ConfigParser()
-        #config.read(
-        #    os.path.join("config", args.config, "compute_kriged_correction_factors.cfg")
-        #)
-
-        #n_pixels_x = int(config["grid"]["n_pixels_x"])
-        #n_pixels_y = int(config["grid"]["n_pixels_y"])
-
-        #zeros_array = np.zeros((n_pixels_y, n_pixels_x))
-        
-        #if config["output"]["type"] == "geotiff":
-        #    pr = pyproj.Proj(config["grid"]["projection"])
-        #    ll_x, ll_y = pr(config["grid"]["ll_lon"], config["grid"]["ll_lat"])
-        #    ur_x, ur_y = pr(config["grid"]["ur_lon"], config["grid"]["ur_lat"])                                                            
-        #    bounds = [ll_x, ll_y, ur_x, ur_y]
-        #    fn = correction_factor_file_without_extension + ".tif"
-        #    exporters.export_geotiff(fn, zeros_array, config["grid"]["projection"], bounds)           
-
-        #elif config["output"]["type"] == "numpy":
-        #    np.savez_compressed(correction_factor_file_without_extension, corr=zeros_array, corr_var=zeros_array)
-
-        #else:
-        #    raise ValueError(
-        #        f"Output format {config['output']['type']} not supported. The valid options are 'geotiff' and 'numpy'"
-        #    )
 
 if __name__ == '__main__':
 
