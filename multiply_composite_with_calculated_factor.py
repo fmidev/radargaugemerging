@@ -261,8 +261,8 @@ def run(timestamp, config):
         logging.info(
             f"No radargauge factor file found for {timestamp} or within 15 minutes before. Copying original file {input_file} to {output_file} without modifications."
         )
-
-       shutil.copyfile(input_file, output_file) 
+        
+        shutil.copyfile(input_file, output_file) 
         
     else:
 
